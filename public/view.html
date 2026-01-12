@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Difference Calculator - View</title>
+    <link rel="icon" type="image/png" href="https://toppng.com/uploads/preview/indian-oil-corporation-vector-logo-11574259324ulqkuccpqn.png">
+    <script src="./style.js"></script>
+    <style>
+        /* Custom styles for the Inter font and overall body */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #2563eb; /* Blue background for the entire page */
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+        }
+        /* Ensure input type="number" does not show spin buttons */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield; /* Firefox specific */
+        }
+        /* Custom utility for 49% width */
+        .w-49\% {
+            width: 49%;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="bg-white p-6 sm:p-8 md:p-10 rounded-xl shadow-lg w-full max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto my-auto">
+        <a href="/admin">Admin Panel</a>
+        <div class="mb-8">
+            <label for="currentDate" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Date</label>
+            <input type="date" id="currentDate"
+                   class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                   readonly tabindex="-1">
+        </div>
+
+        <div class="mb-8">
+            <label for="displayId" class="block text-lg font-semibold text-gray-700 mb-2 text-center">ID Section</label>
+            <input type="text" id="displayId"
+                   class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                   readonly placeholder="-" tabindex="-1">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <div>
+                <label for="petrol" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Petrol Price</label>
+                <input type="number" id="petrol"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="Enter petrol price" readonly>
+            </div>
+            <div>
+                <label for="diesel" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Diesel Price</label>
+                <input type="number" id="diesel"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="Enter diesel price" readonly>
+            </div>
+            <div>
+                <label for="oil" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Oil Price</label>
+                <input type="number" id="oil"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="Enter oil price" readonly>
+            </div>
+        </div>
+
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Oil First Reading</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="number" id="oilFirstReading"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="oilFirstReading2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="oilFirstReading3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+            </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Oil Second Reading</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="number" id="oilSecondReading"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="oilSecondReading2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="oilSecondReading3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+            </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Oil Difference</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="text" id="oilReadingDifference"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+                <input type="text" id="oilReadingDifference2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+                <input type="text" id="oilReadingDifference3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+        <div class="grid grid-cols-1 mt-8">
+            <div>
+                <label for="oilRequiredMoney" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Required Money (Oil)</label>
+                <input type="text" id="oilRequiredMoney"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-blue-100 text-blue-800 text-center font-bold text-lg"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Petrol First Reading</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="number" id="firstReading1"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="firstReading2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="firstReading3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Petrol Second Reading</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="number" id="secondReading1"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="secondReading2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="secondReading3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Petrol Difference</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="text" id="petrolDifference1"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+                <input type="text" id="petrolDifference2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+                <input type="text" id="petrolDifference3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+        <div class="grid grid-cols-1 mt-8">
+            <div>
+                <label for="requiredMoneyPetrol" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Required Money (Petrol)</label>
+                <input type="text" id="requiredMoneyPetrol"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-green-100 text-green-800 text-center font-bold text-lg"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Diesel First Reading</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="number" id="dieselFirstReading1"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="dieselFirstReading2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="dieselFirstReading3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Diesel Second Reading</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="number" id="dieselSecondReading1"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="dieselSecondReading2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+                <input type="number" id="dieselSecondReading3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="-" readonly>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 w-full sm:w-1/3 mb-2 sm:mb-0 text-left">Diesel Difference</h2>
+            <div class="flex flex-row space-x-2 w-full sm:w-2/3 justify-end">
+                <input type="text" id="dieselDifference1"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+                <input type="text" id="dieselDifference2"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+                <input type="text" id="dieselDifference3"
+                       class="w-1/3 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 mt-8">
+            <div>
+                <label for="requiredMoneyDiesel" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Required Money (Diesel)</label>
+                <input type="text" id="requiredMoneyDiesel"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-blue-100 text-blue-800 text-center font-bold text-lg"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+            <div>
+                <label for="petrolTestQuantity" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Petrol Test Quantity (Liters)</label>
+                <input type="number" id="petrolTestQuantity"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="Enter liters tested" readonly>
+            </div>
+            <div>
+                <label for="dieselTestQuantity" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Diesel Test Quantity (Liters)</label>
+                <input type="number" id="dieselTestQuantity"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="Enter liters tested" readonly>
+            </div>
+            <div>
+                <label for="petrolTestQuantityMoney" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Petrol Test Money</label>
+                <input type="text" id="petrolTestQuantityMoney"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-purple-100 text-purple-800 text-center font-bold text-lg"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+            <div>
+                <label for="dieselTestQuantityMoney" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Diesel Test Money</label>
+                <input type="text" id="dieselTestQuantityMoney"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-purple-100 text-purple-800 text-center font-bold text-lg"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <div>
+                <label for="totalBatteryWaterAmount" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Battery Water (Total)</label>
+                <input type="text" id="totalBatteryWaterAmount"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+            <div>
+                <label for="acidWater" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Acid Water</label>
+                <input type="number" id="acidWater"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                       placeholder="Enter amount" readonly>
+            </div>
+        </div>
+
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="mb-6">
+            <h2 class="block text-lg sm:text-xl font-semibold text-gray-700 mb-4 text-center">Packed Oil</h2>
+            <div id="packedOilEntriesContainer" class="space-y-3">
+                </div>
+            <div class="mt-4">
+                <label for="totalPackedOilAmount" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Total Packed Oil</label>
+                <input type="text" id="totalPackedOilAmount"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <div class="col-span-1">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-4 text-center">Credit</h2>
+                <div id="creditEntriesContainer" class="space-y-3">
+                    </div>
+                <div class="mt-4">
+                    <label for="totalCreditAmount" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Total Credit</label>
+                    <input type="text" id="totalCreditAmount"
+                           class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                           readonly placeholder="-" tabindex="-1">
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-4 text-center">Debit</h2>
+                <div id="debitEntriesContainer" class="space-y-3">
+                    </div>
+                <div class="mt-4">
+                    <label for="totalDebitAmount" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Total Debit</label>
+                    <input type="text" id="totalDebitAmount"
+                           class="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center font-bold"
+                           readonly placeholder="-" tabindex="-1">
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="grid grid-cols-1 mt-8">
+            <div class="col-span-1">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-4 text-center">Denomination Calculator</h2>
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <label for="note500" class="w-24 text-right pr-4 text-gray-700">500 x</label>
+                        <input type="number" id="note500"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                               placeholder="0" readonly>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="note200" class="w-24 text-right pr-4 text-gray-700">200 x</label>
+                        <input type="number" id="note200"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                               placeholder="0" readonly>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="note100" class="w-24 text-right pr-4 text-gray-700">100 x</label>
+                        <input type="number" id="note100"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                               placeholder="0" readonly>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="note50" class="w-24 text-right pr-4 text-gray-700">50 x</label>
+                        <input type="number" id="note50"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                               placeholder="0" readonly>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="note20" class="w-24 text-right pr-4 text-gray-700">20 x</label>
+                        <input type="number" id="note20"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                               placeholder="0" readonly>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="note10" class="w-24 text-right pr-4 text-gray-700">10 x</label>
+                        <input type="number" id="note10"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                               placeholder="0" readonly>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="note5" class="w-24 text-right pr-4 text-gray-700">5 x</label>
+                        <input type="number" id="note5"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                               placeholder="0" readonly>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="coins" class="w-24 text-right pr-4 text-gray-700">Coins</label>
+                        <input type="number" id="coins"
+                               class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800 text-center"
+                               placeholder="0" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-8 border-t border-gray-300">
+
+        <div class="grid grid-cols-1 mt-8">
+            <div>
+                <label for="totalAmount" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Total Denomination Amount</label>
+                <input type="text" id="totalAmount"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-yellow-100 text-yellow-800 text-center font-bold text-lg"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 mt-8">
+            <div>
+                <label for="finalResult" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Final Result</label>
+                <input type="text" id="finalResult"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-green-100 text-green-800 text-center font-bold text-lg"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 mt-8">
+            <div>
+                <label id="excessShotHeading" class="block text-lg font-semibold text-gray-700 mb-2 text-center">Excess/Shot</label>
+                <input type="text" id="excessShotResult"
+                       class="w-full p-3 border border-gray-300 rounded-lg bg-red-100 text-red-800 text-center font-bold text-lg"
+                       readonly placeholder="-" tabindex="-1">
+            </div>
+        </div>
+
+        <div class="mt-8 text-center">
+            <a id="editButton" href="#"
+               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Edit Entry
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        // Helper function to safely get numeric value from an input
+        function getNumberValue(id) {
+            const element = document.getElementById(id);
+            return element && !isNaN(parseFloat(element.value)) ? parseFloat(element.value) : 0;
+        }
+
+        // Helper function to safely set numeric value to an input
+        function setOutputValue(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.value = value.toFixed(2); // Format to 2 decimal places
+            }
+        }
+
+        /**
+         * Dynamically adds a new packed oil entry row (name and amount) for display.
+         * @param {string} name - The name of the packed oil.
+         * @param {number} amount - The amount of the packed oil.
+         */
+        function addPackedOilEntry(name, price) {
+            const container = document.getElementById('packedOilEntriesContainer');
+
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'flex items-center gap-x-2 mb-3';
+
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.value = name;
+            nameInput.className = 'w-1/2 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center packed-oil-name';
+            nameInput.readOnly = true;
+            nameInput.tabIndex = -1;
+
+            const priceInput = document.createElement('input');
+            priceInput.type = 'number';
+            priceInput.value = price;
+            priceInput.className = 'w-1/2 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center packed-oil-amount';
+            priceInput.readOnly = true;
+            priceInput.tabIndex = -1;
+
+            entryDiv.appendChild(nameInput);
+            entryDiv.appendChild(priceInput);
+            container.appendChild(entryDiv);
+        }
+
+        /**
+         * Dynamically adds a new credit/debit entry row (name and amount) for display.
+         * @param {string} type - 'credit' or 'debit'.
+         * @param {string} name - The name for the entry.
+         * @param {number} amount - The amount for the entry.
+         */
+        function addDynamicEntry(type, name, amount) {
+            const containerId = type === 'credit' ? 'creditEntriesContainer' : 'debitEntriesContainer';
+            const container = document.getElementById(containerId);
+
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'flex items-center gap-x-2 mb-3';
+
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.value = name;
+            nameInput.className = 'w-1/2 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center dynamic-entry-name';
+            nameInput.readOnly = true;
+            nameInput.tabIndex = -1;
+
+            const amountInput = document.createElement('input');
+            amountInput.type = 'number';
+            amountInput.value = amount;
+            amountInput.className = 'w-1/2 p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 text-center dynamic-entry-amount';
+            amountInput.readOnly = true;
+            amountInput.tabIndex = -1;
+
+            entryDiv.appendChild(nameInput);
+            entryDiv.appendChild(amountInput);
+            container.appendChild(entryDiv);
+        }
+
+        // Calculation functions
+        function calculateOilReadingDifference() {
+            const oilFirstReading = getNumberValue('oilFirstReading');
+            const oilSecondReading = getNumberValue('oilSecondReading');
+            const oilFirstReading2 = getNumberValue('oilFirstReading2');
+            const oilSecondReading2 = getNumberValue('oilSecondReading2');
+            const oilFirstReading3 = getNumberValue('oilFirstReading3');
+            const oilSecondReading3 = getNumberValue('oilSecondReading3');
+            const oilPrice = getNumberValue('oil');
+
+            const diff1 = oilFirstReading - oilSecondReading;
+            const diff2 = oilFirstReading2 - oilSecondReading2;
+            const diff3 = oilFirstReading3 - oilSecondReading3;
+
+            setOutputValue('oilReadingDifference', diff1);
+            setOutputValue('oilReadingDifference2', diff2);
+            setOutputValue('oilReadingDifference3', diff3);
+
+            // Required Money (Oil)
+            const oilRequiredMoney = (diff1 + diff2 + diff3) * oilPrice;
+            setOutputValue('oilRequiredMoney', oilRequiredMoney);
+        }
+
+        function calculatePetrolDifference() {
+            const petrolFirstReading1 = getNumberValue('firstReading1');
+            const petrolSecondReading1 = getNumberValue('secondReading1');
+            const petrolFirstReading2 = getNumberValue('firstReading2');
+            const petrolSecondReading2 = getNumberValue('secondReading2');
+            const petrolFirstReading3 = getNumberValue('firstReading3');
+            const petrolSecondReading3 = getNumberValue('secondReading3');
+
+            const diff1 = petrolSecondReading1 - petrolFirstReading1;
+            const diff2 = petrolSecondReading2 - petrolFirstReading2;
+            const diff3 = petrolSecondReading3 - petrolFirstReading3;
+
+            setOutputValue('petrolDifference1', diff1);
+            setOutputValue('petrolDifference2', diff2);
+            setOutputValue('petrolDifference3', diff3);
+        }
+
+        function calculateDieselDifference() {
+            const dieselFirstReading1 = getNumberValue('dieselFirstReading1');
+            const dieselSecondReading1 = getNumberValue('dieselSecondReading1');
+            const dieselFirstReading2 = getNumberValue('dieselFirstReading2');
+            const dieselSecondReading2 = getNumberValue('dieselSecondReading2');
+            const dieselFirstReading3 = getNumberValue('dieselFirstReading3');
+            const dieselSecondReading3 = getNumberValue('dieselSecondReading3');
+
+            const diff1 = dieselSecondReading1 - dieselFirstReading1;
+            const diff2 = dieselSecondReading2 - dieselFirstReading2;
+            const diff3 = dieselSecondReading3 - dieselFirstReading3;
+
+            setOutputValue('dieselDifference1', diff1);
+            setOutputValue('dieselDifference2', diff2);
+            setOutputValue('dieselDifference3', diff3);
+        }
+
+        function calculateCreditDebit() {
+            let totalCredit = 0;
+            document.querySelectorAll('#creditEntriesContainer .dynamic-entry-amount').forEach(input => {
+                totalCredit += parseFloat(input.value) || 0;
+            });
+            setOutputValue('totalCreditAmount', totalCredit); // Display total credit
+
+            let totalDebit = 0;
+            document.querySelectorAll('#debitEntriesContainer .dynamic-entry-amount').forEach(input => {
+                totalDebit += parseFloat(input.value) || 0;
+            });
+            setOutputValue('totalDebitAmount', totalDebit); // Display total debit
+        }
+
+        function calculateCombinedRequiredMoney() {
+            const petrolPrice = getNumberValue('petrol');
+            const petrolDifference1 = getNumberValue('petrolDifference1');
+            const petrolDifference2 = getNumberValue('petrolDifference2');
+            const petrolDifference3 = getNumberValue('petrolDifference3');
+
+            const totalPetrolDifference = petrolDifference1 + petrolDifference2 + petrolDifference3;
+            const requiredMoneyPetrol = totalPetrolDifference * petrolPrice;
+            setOutputValue('requiredMoneyPetrol', requiredMoneyPetrol);
+        }
+
+        function calculateTestQuantitiesMoney() {
+            const petrolTestQuantity = getNumberValue('petrolTestQuantity');
+            const dieselTestQuantity = getNumberValue('dieselTestQuantity');
+            const petrolPrice = getNumberValue('petrol');
+            const dieselPrice = getNumberValue('diesel');
+
+            const petrolTestQuantityMoney = petrolTestQuantity * petrolPrice;
+            const dieselTestQuantityMoney = dieselTestQuantity * dieselPrice;
+
+            setOutputValue('petrolTestQuantityMoney', petrolTestQuantityMoney);
+            setOutputValue('dieselTestQuantityMoney', dieselTestQuantityMoney);
+        }
+
+        function calculateDieselRequiredMoney() {
+            const dieselPrice = getNumberValue('diesel');
+            const dieselDifference1 = getNumberValue('dieselDifference1');
+            const dieselDifference2 = getNumberValue('dieselDifference2');
+            const dieselDifference3 = getNumberValue('dieselDifference3');
+
+            const totalDieselDifference = dieselDifference1 + dieselDifference2 + dieselDifference3;
+            const requiredMoneyDiesel = totalDieselDifference * dieselPrice;
+            setOutputValue('requiredMoneyDiesel', requiredMoneyDiesel);
+        }
+
+        function calculateDenominations() {
+            const note500 = getNumberValue('note500');
+            const note200 = getNumberValue('note200');
+            const note100 = getNumberValue('note100');
+            const note50 = getNumberValue('note50');
+            const note20 = getNumberValue('note20');
+            const note10 = getNumberValue('note10');
+            const note5 = getNumberValue('note5');
+            const coins = getNumberValue('coins');
+
+            const totalAmount = (note500 * 500) + (note200 * 200) +
+                                (note100 * 100) + (note50 * 50) + (note20 * 20) +
+                                (note10 * 10) + (note5 * 5) + coins;
+            setOutputValue('totalAmount', totalAmount);
+        }
+
+        function calculateTotalBatteryWater(data) {
+            const batteryWater30 = data.batteryWater30 || 0;
+            const batteryWater60 = data.batteryWater60 || 0;
+            const batteryWater150 = data.batteryWater150 || 0;
+            const totalBatteryWater = (30 * batteryWater30) + (60 * batteryWater60) + (150 * batteryWater150);
+            setOutputValue('totalBatteryWaterAmount', totalBatteryWater);
+            return totalBatteryWater; // Return for use in final calculation
+        }
+
+        function calculateTotalPackedOil() {
+            let totalPackedOil = 0;
+            document.querySelectorAll('#packedOilEntriesContainer .packed-oil-amount').forEach(input => {
+                totalPackedOil += parseFloat(input.value) || 0;
+            });
+            setOutputValue('totalPackedOilAmount', totalPackedOil); // Display total packed oil
+            return totalPackedOil; // Return for use in final calculation
+        }
+
+
+        function calculateFinalResult() {
+            const oilRequiredMoney = getNumberValue('oilRequiredMoney');
+            const requiredMoneyPetrol = getNumberValue('requiredMoneyPetrol');
+            const requiredMoneyDiesel = getNumberValue('requiredMoneyDiesel');
+
+            // Get total from newly added textboxes
+            const totalDebit = getNumberValue('totalDebitAmount');
+            const totalCredit = getNumberValue('totalCreditAmount');
+            const totalBatteryWater = getNumberValue('totalBatteryWaterAmount'); // Use the displayed total
+            const totalPackedOil = getNumberValue('totalPackedOilAmount'); // Use the displayed total
+
+            const acidWater = getNumberValue('acidWater');
+
+            const petrolTestQuantityMoney = getNumberValue('petrolTestQuantityMoney');
+            const dieselTestQuantityMoney = getNumberValue('dieselTestQuantityMoney');
+
+            const finalResult = (oilRequiredMoney + requiredMoneyPetrol + requiredMoneyDiesel + totalDebit + totalBatteryWater + acidWater + totalPackedOil) - (petrolTestQuantityMoney + dieselTestQuantityMoney + totalCredit);
+
+            setOutputValue('finalResult', finalResult);
+        }
+
+        function calculateExcessShot() {
+            const finalResult = getNumberValue('finalResult');
+            const totalDenominationAmount = getNumberValue('totalAmount');
+            const excessShot = totalDenominationAmount - finalResult;
+
+            const headingElement = document.getElementById('excessShotHeading');
+            const resultElement = document.getElementById('excessShotResult');
+
+            if (excessShot > 0) {
+                headingElement.textContent = 'Excess';
+                resultElement.classList.remove('bg-red-100', 'text-red-800', 'bg-gray-100', 'text-gray-800');
+                resultElement.classList.add('bg-green-100', 'text-green-800');
+            } else if (excessShot < 0) {
+                headingElement.textContent = 'Shot';
+                resultElement.classList.remove('bg-green-100', 'text-green-800', 'bg-gray-100', 'text-gray-800');
+                resultElement.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                headingElement.textContent = 'Excess/Shot';
+                resultElement.classList.remove('bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+                resultElement.classList.add('bg-gray-100', 'text-gray-800'); // Neutral color if 0
+            }
+            setOutputValue('excessShotResult', excessShot);
+        }
+
+        // Function to load data from server and populate fields
+        async function loadDataAndCalculate() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const entryId = urlParams.get('id'); // Get the _id from the URL
+
+            let fetchedData = {}; // Store fetched data here
+
+            if (entryId) {
+                try {
+                    const response = await fetch(`/api/reading/${entryId}`); // Fetch data from your API
+                    if (response.ok) {
+                        fetchedData = await response.json();
+                        if (fetchedData) {
+                            // Populate ID and Date fields
+                            document.getElementById('displayId').value = fetchedData.selectedId || '';
+                            document.getElementById('currentDate').value = fetchedData.currentDate || ''; // Assuming currentDate is saved in YYYY-MM-DD format
+
+                            // Populate other fields using the fetched data
+                            const inputIds = [
+                                'petrol', 'diesel', 'oil',
+                                'oilFirstReading', 'oilFirstReading2', 'oilFirstReading3',
+                                'oilSecondReading', 'oilSecondReading2', 'oilSecondReading3',
+                                'firstReading1', 'firstReading2', 'firstReading3',
+                                'secondReading1', 'secondReading2', 'secondReading3',
+                                'dieselFirstReading1', 'dieselFirstReading2', 'dieselFirstReading3',
+                                'dieselSecondReading1', 'dieselSecondReading2', 'dieselSecondReading3',
+                                'petrolTestQuantity', 'dieselTestQuantity',
+                                'acidWater',
+                                'note500', 'note200', 'note100', 'note50', 'note20', 'note10', 'note5', 'coins'
+                            ];
+
+                            inputIds.forEach(id => {
+                                const element = document.getElementById(id);
+                                if (element && fetchedData[id] !== undefined) {
+                                    element.value = fetchedData[id];
+                                }
+                            });
+
+                            // Populate dynamic packed oil entries
+                            if (fetchedData.packedOilEntries && Array.isArray(fetchedData.packedOilEntries)) {
+                                fetchedData.packedOilEntries.forEach(entry => {
+                                    addPackedOilEntry(entry.name, entry.price || 0);
+                                });
+                            }
+
+                            // Populate dynamic credit entries
+                            if (fetchedData.creditEntries && Array.isArray(fetchedData.creditEntries)) {
+                                fetchedData.creditEntries.forEach(entry => {
+                                    addDynamicEntry('credit', entry.name, entry.amount);
+                                });
+                            }
+
+                            // Populate dynamic debit entries
+                            if (fetchedData.debitEntries && Array.isArray(fetchedData.debitEntries)) {
+                                fetchedData.debitEntries.forEach(entry => {
+                                    addDynamicEntry('debit', entry.name, entry.amount);
+                                });
+                            }
+
+                            // Set the href for the edit button
+                            const editButton = document.getElementById('editButton');
+                            if (editButton) {
+                                editButton.href = `edit?id=${entryId}`;
+                            }
+
+
+                        } else {
+                            alert('No data found for this ID.');
+                            console.log('No data found for ID:', entryId);
+                        }
+                    } else {
+                        alert('Failed to fetch data from the server.');
+                        console.error('Server error:', response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    alert('An error occurred while fetching data.');
+                }
+            } else {
+                // Handle cases where no ID is provided in the URL (e.g., direct access)
+                alert('No entry ID provided in the URL.');
+                console.log('No entry ID provided in the URL for view.html');
+            }
+
+            // Perform all calculations after loading data (or even if no data loaded, for initial state)
+            calculateOilReadingDifference();
+            calculatePetrolDifference();
+            calculateDieselDifference();
+            calculateCreditDebit(); // Calculates total credit and debit
+            calculateTestQuantitiesMoney();
+            calculateCombinedRequiredMoney();
+            calculateDieselRequiredMoney();
+            calculateTotalBatteryWater(fetchedData); // Pass fetchedData to calculate total battery water
+            calculateTotalPackedOil(); // Calculates total packed oil
+            calculateDenominations();
+            calculateFinalResult(); // Now uses the new total fields
+            calculateExcessShot();
+        }
+
+        // Initial calculations on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDataAndCalculate();
+        });
+    </script>
+</body>
+</html>

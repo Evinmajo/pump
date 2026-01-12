@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Differences & Totals</title>
+    <script src="./style.js"></script>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-md p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Reading Differences & Grand Totals</h1>
+        
+        <div class="mb-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
+            <div class="flex items-center gap-3">
+                <label for="dateSearch" class="font-semibold text-blue-800">Filter Date:</label>
+                <input type="date" id="dateSearch" onchange="filterTable()" 
+                       class="p-2 border border-blue-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button onclick="resetFilter()" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">
+                Show All Records
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse border border-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="border p-3">Date</th>
+                        <th class="border p-3">Staff ID</th>
+                        <th class="border p-3 text-right">Petrol Sold (L)</th>
+                        <th class="border p-3 text-right">Diesel Sold (L)</th>
+                        <th class="border p-3 text-right">Oil Sold (L)</th>
+                    </tr>
+                </thead>
+                <tbody id="diffTableBody"></tbody>
+                <tfoot class="bg-gray-900 text-white font-bold">
+                    <tr>
+                        <td class="border p-3 text-center" colspan="2">GRAND TOTAL</td>
+                        <td id="totalPetrol" class="border p-3 text-right text-orange-400">0.00</td>
+                        <td id="totalDiesel" class="border p-3 text-right text-blue-400">0.00</td>
+                        <td id="totalOil" class="border p-3 text-right text-yellow-400">0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div id="noDataMessage" class="hidden text-center py-12 text-gray-500 text-lg font-semibold">
+            No records found for this date.
+        </div>
+    </div>
+
+    <script>
+        let allReadings = [];
+
+        async function loadData() {
+            try {
+                const response = await fetch('/api/readings');
+                allReadings = await response.json();
+                renderTable(allReadings);
+            } catch (err) {
+                console.error("Fetch Error:", err);
+            }
+        }
+
+        function renderTable(data) {
+            const container = document.getElementById('diffTableBody');
+            container.innerHTML = '';
+            let sumP = 0, sumD = 0, sumO = 0;
+
+            data.forEach(r => {
+                // Calculation: Second - First for all nozzles
+                const p = (Number(r.secondReading1||0)-Number(r.firstReading1||0)) + 
+                          (Number(r.secondReading2||0)-Number(r.firstReading2||0)) + 
+                          (Number(r.secondReading3||0)-Number(r.firstReading3||0));
+                
+                const d = (Number(r.dieselSecondReading1||0)-Number(r.dieselFirstReading1||0)) + 
+                          (Number(r.dieselSecondReading2||0)-Number(r.dieselFirstReading2||0)) + 
+                          (Number(r.dieselSecondReading3||0)-Number(r.dieselFirstReading3||0));
+                
+                const o = (Number(r.oilSecondReading||0)-Number(r.oilFirstReading||0)) + 
+                          (Number(r.oilSecondReading2||0)-Number(r.oilFirstReading2||0)) + 
+                          (Number(r.oilSecondReading3||0)-Number(r.oilFirstReading3||0));
+
+                sumP += p; sumD += d; sumO += o;
+
+                const row = document.createElement('tr');
+                row.className = "hover:bg-gray-50 border-b";
+                row.innerHTML = `
+                    <td class="p-3 border">${r.currentDate}</td>
+                    <td class="p-3 border">${r.selectedId || 'N/A'}</td>
+                    <td class="p-3 border text-right font-bold text-green-700">${p.toFixed(2)}</td>
+                    <td class="p-3 border text-right font-bold text-green-700">${d.toFixed(2)}</td>
+                    <td class="p-3 border text-right font-bold text-green-700">${o.toFixed(2)}</td>
+                `;
+                container.appendChild(row);
+            });
+
+            document.getElementById('totalPetrol').textContent = sumP.toFixed(2);
+            document.getElementById('totalDiesel').textContent = sumD.toFixed(2);
+            document.getElementById('totalOil').textContent = sumO.toFixed(2);
+        }
+
+        function filterTable() {
+            const pickerDate = document.getElementById('dateSearch').value; // Returns YYYY-MM-DD
+            if (!pickerDate) {
+                renderTable(allReadings);
+                return;
+            }
+
+            // Since both match (YYYY-MM-DD), we compare directly
+            const filtered = allReadings.filter(r => {
+                return r.currentDate === pickerDate;
+            });
+            
+            renderTable(filtered);
+            document.getElementById('noDataMessage').classList.toggle('hidden', filtered.length > 0);
+        }
+
+        function resetFilter() {
+            document.getElementById('dateSearch').value = '';
+            renderTable(allReadings);
+            document.getElementById('noDataMessage').classList.add('hidden');
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>

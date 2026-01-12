@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Data Management</title>
+    <link rel="icon" type="image/png" href="https://toppng.com/uploads/preview/indian-oil-corporation-vector-logo-11574259324ulqkuccpqn.png">
+    <script src="./style.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0eafe;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .tab-button {
+    padding: 0.75rem 1rem; /* Slightly reduced padding for mobile */
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-size: 0.875rem; /* Base size */
+}
+        .tab-button.active {
+            background-color: #2563eb;
+            color: white;
+        }
+        .tab-button:not(.active):hover {
+            background-color: #bfdbfe; /* blue-100 */
+            color: #1e40af; /* blue-800 */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @media (min-width: 640px) {
+    .tab-button {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem; /* Larger size for desktop */
+    }
+}
+    </style>
+</head>
+<body class="antialiased">
+    <div class="bg-white p-6 sm:p-8 md:p-10 rounded-xl shadow-lg w-full max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto my-auto">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 text-center mb-6">Admin Panel</h1>
+
+       <div class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-8">
+    <button class="tab-button active flex-grow sm:flex-grow-0 text-center" onclick="showTab('searchReadings')">Search Readings</button>
+    <button class="tab-button flex-grow sm:flex-grow-0 text-center" onclick="showTab('manageStaff')">Manage Staff</button>
+    <a class="tab-button flex-grow sm:flex-grow-0 text-center" href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">Credit & Debit</a>
+    <a class="tab-button flex-grow sm:flex-grow-0 text-center" href="/hiyth4ygb5yhgtiuriueiuhgtuhg8price">Price Change</a>
+    <a class="tab-button flex-grow sm:flex-grow-0 text-center" href="/manage-defaults">Set Readings</a>
+    <a class="tab-button flex-grow sm:flex-grow-0 text-center" href="/reading-diff">Sale Records</a>
+    <a class="tab-button flex-grow sm:flex-grow-0 text-center" href="/oil_stock">Packed Oil Record</a>
+    <a class="tab-button flex-grow sm:flex-grow-0 text-center" href="/packed-oil-history">Packed Oil Sale</a>
+</div>
+
+        <div id="searchReadings" class="tab-content active">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 text-center mb-6">Search Readings</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="searchDate" class="block text-md font-semibold text-gray-700 mb-2">Search by Date:</label>
+                    <input type="date" id="searchDate"
+                           class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800">
+                </div>
+                <div>
+                    <label for="searchId" class="block text-md font-semibold text-gray-700 mb-2">Search by Staff ID:</label>
+                    <select id="searchId"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800">
+                        <option value="">All Staff</option>
+                        </select>
+                </div>
+            </div>
+            <button onclick="searchData()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg text-xl transition duration-300 ease-in-out mb-6">
+                Search
+            </button>
+
+            <div id="searchResults" class="overflow-x-auto relative shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="py-3 px-6">Date</th>
+                            <th scope="col" class="py-3 px-6">Staff Name</th>
+                            <th scope="col" class="py-3 px-6">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        </tbody>
+                </table>
+                <p id="noResultsMessage" class="text-center text-gray-600 py-4" style="display:none;">No data found.</p>
+            </div>
+        </div>
+
+        <div id="manageStaff" class="tab-content">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 text-center mb-6">Manage Staff</h2>
+
+            <div class="mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-700 mb-4">Add New Staff Member</h3>
+                <div class="mb-4">
+                    <label for="newStaffId" class="block text-md font-semibold text-gray-700 mb-2">Staff ID:</label>
+                    <input type="text" id="newStaffId"
+                           class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800"
+                           placeholder="Enter New Staff ID">
+                </div>
+                <div class="mb-4">
+                    <label for="newStaffName" class="block text-md font-semibold text-gray-700 mb-2">Staff Name:</label>
+                    <input type="text" id="newStaffName"
+                           class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm text-gray-800"
+                           placeholder="Enter New Staff Name">
+                </div>
+                <button onclick="addStaff()"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-lg transition duration-300 ease-in-out">
+                    Add Staff
+                </button>
+            </div>
+
+            <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="py-3 px-6">Staff ID</th>
+                            <th scope="col" class="py-3 px-6">Staff Name</th>
+                            <th scope="col" class="py-3 px-6">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staffListBody">
+                        </tbody>
+                </table>
+                <p id="noStaffMessage" class="text-center text-gray-600 py-4" style="display:none;">No staff found.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Function to show/hide tabs
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`).classList.add('active');
+
+            // Load data when tab is shown
+            if (tabId === 'searchReadings') {
+                populateStaffDropdown('searchId'); // Populate dropdown when search tab is active
+                searchData();
+            } else if (tabId === 'manageStaff') {
+                loadStaffList();
+            }
+        }
+
+        // --- Search Readings Functions (Existing) ---
+        // Store staff data to avoid multiple API calls
+        let staffMap = {};
+
+        async function fetchStaffData() {
+            try {
+                const response = await fetch('/api/staff');
+                if (response.ok) {
+                    const staffData = await response.json();
+                    staffMap = {}; // Clear previous map
+                    staffData.forEach(staff => {
+                        staffMap[staff.staffId] = staff.name;
+                    });
+                } else {
+                    console.error('Error fetching staff data:', await response.json());
+                }
+            } catch (error) {
+                console.error('Network error fetching staff data:', error);
+            }
+        }
+
+        async function searchData() {
+            const searchDate = document.getElementById('searchDate').value;
+            const searchId = document.getElementById('searchId').value; // Now a select element
+            const resultsBody = document.getElementById('resultsBody');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+
+            resultsBody.innerHTML = ''; // Clear previous results
+            noResultsMessage.style.display = 'none'; // Hide message initially
+
+            let queryParams = new URLSearchParams();
+            if (searchDate) {
+                queryParams.append('searchDate', searchDate);
+            }
+            if (searchId) { // Only append if a staff ID is selected (not "All Staff")
+                queryParams.append('searchId', searchId);
+            }
+
+            await fetchStaffData(); // Ensure staff data is loaded before searching readings
+
+            try {
+                const response = await fetch(`/api/readings?${queryParams.toString()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.length > 0) {
+                        data.forEach(entry => {
+                            const staffName = staffMap[entry.selectedId] || 'N/A'; // Get staff name from map
+                            const row = resultsBody.insertRow();
+                            row.className = 'bg-white border-b hover:bg-gray-50';
+                            row.innerHTML = `
+                                <td class="py-4 px-6">${entry.currentDate}</td>
+                                <td class="py-4 px-6">${staffName}</td>
+                                <td class="py-4 px-6 text-right">
+                                    <a href="view.html?id=${entry._id}" class="font-medium text-blue-600 hover:underline mr-3">View</a>
+                                    <a href="edit.html?id=${entry._id}" class="font-medium text-yellow-500 hover:underline mr-3">Edit</a>
+                                    <button onclick="deleteEntry('${entry._id}')" class="font-medium text-red-600 hover:underline">Delete</button>
+                                </td>
+                            `;
+                        });
+                    } else {
+                        noResultsMessage.style.display = 'block';
+                        noResultsMessage.textContent = 'No data found for the given criteria.';
+                    }
+                } else {
+                    const errorData = await response.json();
+                    noResultsMessage.style.display = 'block';
+                    noResultsMessage.textContent = `Error: ${errorData.message || response.statusText}`;
+                    console.error('Server error:', errorData);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                if (noResultsMessage) {
+                    noResultsMessage.style.display = 'block'; // Show "No data found" message on error
+                    noResultsMessage.textContent = 'Network error or server unreachable. Please check console for details.';
+                }
+            }
+        }
+
+        async function deleteEntry(id) {
+            if (confirm('Are you sure you want to delete this entry?')) {
+                try {
+                    const response = await fetch(`/api/readings/${id}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.ok) {
+                        alert('Entry deleted successfully!');
+                        searchData(); // Refresh the search results
+                    } else {
+                        alert('Failed to delete entry. Status: ' + response.status);
+                        console.error('Server error:', response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error deleting entry:', error);
+                    alert('An error occurred while deleting the entry.');
+                }
+            }
+        }
+
+        // --- Staff Management Functions ---
+        async function loadStaffList() {
+            const staffListBody = document.getElementById('staffListBody');
+            const noStaffMessage = document.getElementById('noStaffMessage');
+            staffListBody.innerHTML = ''; // Clear previous results
+            noStaffMessage.style.display = 'none'; // Hide message initially
+
+            try {
+                const response = await fetch('/api/staff'); // Fetch all staff members
+                if (response.ok) {
+                    const staffData = await response.json();
+                    if (staffData.length > 0) {
+                        staffData.forEach(staff => {
+                            const row = staffListBody.insertRow();
+                            row.className = 'bg-white border-b hover:bg-gray-50';
+                            row.innerHTML = `
+                                <td class="py-4 px-6">${staff.staffId}</td>
+                                <td class="py-4 px-6">${staff.name}</td>
+                                <td class="py-4 px-6 text-right">
+                                    <button onclick="deleteStaff('${staff.staffId}')" class="font-medium text-red-600 hover:underline">Delete</button>
+                                </td>
+                            `;
+                        });
+                    } else {
+                        noStaffMessage.style.display = 'block';
+                        noStaffMessage.textContent = 'No staff members found.';
+                    }
+                } else {
+                    const errorData = await response.json();
+                    noStaffMessage.style.display = 'block';
+                    noStaffMessage.textContent = `Error: ${errorData.message || response.statusText}`;
+                    console.error('Server error:', errorData);
+                }
+            } catch (error) {
+                console.error('Error fetching staff list:', error);
+                noStaffMessage.style.display = 'block';
+                noStaffMessage.textContent = 'Network error or server unreachable. Please check console for details.';
+            }
+        }
+
+        async function addStaff() {
+            const newStaffId = document.getElementById('newStaffId').value;
+            const newStaffName = document.getElementById('newStaffName').value;
+
+            if (!newStaffId || !newStaffName) {
+                alert('Please enter both Staff ID and Staff Name.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/staff', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ staffId: newStaffId, name: newStaffName }), // Send staffId
+                });
+
+                if (response.ok) {
+                    alert('Staff member added successfully!');
+                    document.getElementById('newStaffId').value = ''; // Clear input
+                    document.getElementById('newStaffName').value = ''; // Clear input
+                    loadStaffList(); // Refresh the staff list
+                    populateStaffDropdown('searchId'); // Also refresh the dropdown in Search Readings
+                    populateStaffDropdown('selectedId'); // Refresh dropdown in index.html if it was here
+                } else {
+                    const errorData = await response.json();
+                    alert(`Failed to add staff member: ${errorData.message || 'Server error'}`);
+                    console.error('Server error:', errorData);
+                }
+            } catch (error) {
+                console.error('Error adding staff member:', error);
+                alert('An error occurred while adding the staff member.');
+            }
+        }
+
+        async function deleteStaff(staffId) { // Changed parameter to staffId
+            if (confirm('Are you sure you want to delete this staff member? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/api/staff/${staffId}`, { // Use staffId in URL
+                        method: 'DELETE',
+                    });
+
+                    if (response.ok) {
+                        alert('Staff member deleted successfully!');
+                        loadStaffList(); // Refresh the staff list
+                        populateStaffDropdown('searchId'); // Also refresh the dropdown in Search Readings
+                        populateStaffDropdown('selectedId'); // Refresh dropdown in index.html if it was here
+                    } else {
+                        const errorData = await response.json();
+                        alert(`Failed to delete staff member: ${errorData.message || 'Server error'}`);
+                        console.error('Server error:', errorData);
+                    }
+                } catch (error) {
+                    console.error('Error deleting staff member:', error);
+                    alert('An error occurred while deleting the staff member.');
+                }
+            }
+        }
+
+        // New function to populate staff dropdowns
+        async function populateStaffDropdown(selectElementId) {
+            const selectElement = document.getElementById(selectElementId);
+            if (!selectElement) return; // Exit if the element doesn't exist (e.g., if it's in another HTML file)
+
+            // Clear existing options, but keep the "All Staff" or "Select Staff" option
+            const initialOption = selectElement.querySelector('option[value=""]');
+            selectElement.innerHTML = '';
+            if (initialOption) {
+                selectElement.appendChild(initialOption);
+            } else {
+                // Add a default option if it was not present (e.g., for index.html)
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = (selectElementId === 'searchId') ? 'All Staff' : 'Select Staff';
+                selectElement.appendChild(defaultOption);
+            }
+
+
+            try {
+                const response = await fetch('/api/staff');
+                if (response.ok) {
+                    const staffData = await response.json();
+                    staffData.forEach(staff => {
+                        const option = document.createElement('option');
+                        option.value = staff.staffId; // Use staff.staffId for the value
+                        option.textContent = `${staff.name} (${staff.staffId})`; // Display name and staffId
+                        selectElement.appendChild(option);
+                    });
+                } else {
+                    console.error(`Error fetching staff for dropdown ${selectElementId}:`, await response.json());
+                }
+            } catch (error) {
+                console.error(`Network error fetching staff for dropdown ${selectElementId}:`, error);
+            }
+        }
+
+        // Initial load: show the first tab and its data
+        document.addEventListener('DOMContentLoaded', () => {
+            showTab('searchReadings'); // Default to showing search readings tab
+            // Initial population of the staff dropdown for Search Readings
+            populateStaffDropdown('searchId');
+        });
+    </script>
+</body>
+</html>
