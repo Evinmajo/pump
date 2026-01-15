@@ -3,42 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reading Differences & Totals</title>
+    <title>Machine Readings & Totals</title>
     <script src="./style.js"></script>
+    <style>
+        /* Custom scrollbar for better UX on mobile horizontal scroll */
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 6px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+        /* Ensure table doesn't shrink too much */
+        table {
+            min-width: 1000px;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 p-4 md:p-8">
-    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-md p-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Reading Differences & Grand Totals</h1>
+<body class="bg-gray-100 p-2 md:p-8">
+    <div class="max-w-full mx-auto bg-white rounded-xl shadow-md p-4 md:p-6">
+        <h1 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 text-center">Petrol, Diesel & Oil Report</h1>
         
-        <div class="mb-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
-            <div class="flex items-center gap-3">
-                <label for="dateSearch" class="font-semibold text-blue-800">Filter Date:</label>
+        <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <label for="dateSearch" class="font-semibold text-blue-800 whitespace-nowrap">Filter Date:</label>
                 <input type="date" id="dateSearch" onchange="filterTable()" 
-                       class="p-2 border border-blue-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full sm:w-auto p-2 border border-blue-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-            <button onclick="resetFilter()" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">
+            <button onclick="resetFilter()" class="w-full sm:w-auto bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">
                 Show All Records
             </button>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left border-collapse border border-gray-200">
-                <thead class="bg-gray-100">
+        <div class="overflow-x-auto rounded-lg border border-gray-200">
+            <table class="w-full text-[10px] md:text-xs text-left border-collapse">
+                <thead class="bg-gray-100 text-gray-700 sticky top-0">
                     <tr>
-                        <th class="border p-3">Date</th>
-                        <th class="border p-3">Staff ID</th>
-                        <th class="border p-3 text-right">Petrol Sold (L)</th>
-                        <th class="border p-3 text-right">Diesel Sold (L)</th>
-                        <th class="border p-3 text-right">Oil Sold (L)</th>
+                        <th class="border p-2 text-center" rowspan="3">Date</th>
+                        <th class="border p-2 text-center" rowspan="3">Staff</th>
+                        <th class="border p-2 text-center bg-orange-50" colspan="6">Petrol Readings</th>
+                        <th class="border p-2 text-center bg-blue-50" colspan="6">Diesel Readings</th>
+                        <th class="border p-2 text-center bg-green-50" colspan="3">Total Sold (L)</th>
+                    </tr>
+                    <tr>
+                        <th class="border p-1 text-center bg-orange-100" colspan="2">M1</th>
+                        <th class="border p-1 text-center bg-orange-100" colspan="2">M2</th>
+                        <th class="border p-1 text-center bg-orange-100" colspan="2">M3</th>
+                        <th class="border p-1 text-center bg-blue-100" colspan="2">M1</th>
+                        <th class="border p-1 text-center bg-blue-100" colspan="2">M2</th>
+                        <th class="border p-1 text-center bg-blue-100" colspan="2">M3</th>
+                        <th class="border p-1 text-center bg-green-100" rowspan="2">Petrol</th>
+                        <th class="border p-1 text-center bg-green-100" rowspan="2">Diesel</th>
+                        <th class="border p-1 text-center bg-green-100" rowspan="2">Oil</th>
+                    </tr>
+                    <tr>
+                        <th class="border p-1 text-center bg-orange-50">1st</th><th class="border p-1 text-center bg-orange-50">2nd</th>
+                        <th class="border p-1 text-center bg-orange-50">1st</th><th class="border p-1 text-center bg-orange-50">2nd</th>
+                        <th class="border p-1 text-center bg-orange-50">1st</th><th class="border p-1 text-center bg-orange-50">2nd</th>
+                        <th class="border p-1 text-center bg-blue-50">1st</th><th class="border p-1 text-center bg-blue-50">2nd</th>
+                        <th class="border p-1 text-center bg-blue-50">1st</th><th class="border p-1 text-center bg-blue-50">2nd</th>
+                        <th class="border p-1 text-center bg-blue-50">1st</th><th class="border p-1 text-center bg-blue-50">2nd</th>
                     </tr>
                 </thead>
-                <tbody id="diffTableBody"></tbody>
+                <tbody id="diffTableBody" class="bg-white"></tbody>
                 <tfoot class="bg-gray-900 text-white font-bold">
                     <tr>
-                        <td class="border p-3 text-center" colspan="2">GRAND TOTAL</td>
-                        <td id="totalPetrol" class="border p-3 text-right text-orange-400">0.00</td>
-                        <td id="totalDiesel" class="border p-3 text-right text-blue-400">0.00</td>
-                        <td id="totalOil" class="border p-3 text-right text-yellow-400">0.00</td>
+                        <td class="border p-3 text-center" colspan="14">GRAND TOTAL</td>
+                        <td id="grandTotalPetrol" class="border p-3 text-right text-orange-400">0.00</td>
+                        <td id="grandTotalDiesel" class="border p-3 text-right text-blue-400">0.00</td>
+                        <td id="grandTotalOil" class="border p-3 text-right text-yellow-400">0.00</td>
                     </tr>
                 </tfoot>
             </table>
@@ -57,63 +90,57 @@
                 const response = await fetch('/api/readings');
                 allReadings = await response.json();
                 renderTable(allReadings);
-            } catch (err) {
-                console.error("Fetch Error:", err);
-            }
+            } catch (err) { console.error("Fetch Error:", err); }
         }
 
         function renderTable(data) {
             const container = document.getElementById('diffTableBody');
             container.innerHTML = '';
-            let sumP = 0, sumD = 0, sumO = 0;
+            let totalP = 0, totalD = 0, totalO = 0;
 
             data.forEach(r => {
-                // Calculation: Second - First for all nozzles
-                const p = (Number(r.secondReading1||0)-Number(r.firstReading1||0)) + 
-                          (Number(r.secondReading2||0)-Number(r.firstReading2||0)) + 
-                          (Number(r.secondReading3||0)-Number(r.firstReading3||0));
+                const rowP = (Number(r.secondReading1||0)-Number(r.firstReading1||0)) + 
+                             (Number(r.secondReading2||0)-Number(r.firstReading2||0)) + 
+                             (Number(r.secondReading3||0)-Number(r.firstReading3||0));
                 
-                const d = (Number(r.dieselSecondReading1||0)-Number(r.dieselFirstReading1||0)) + 
-                          (Number(r.dieselSecondReading2||0)-Number(r.dieselFirstReading2||0)) + 
-                          (Number(r.dieselSecondReading3||0)-Number(r.dieselFirstReading3||0));
+                const rowD = (Number(r.dieselSecondReading1||0)-Number(r.dieselFirstReading1||0)) + 
+                             (Number(r.dieselSecondReading2||0)-Number(r.dieselFirstReading2||0)) + 
+                             (Number(r.dieselSecondReading3||0)-Number(r.dieselFirstReading3||0));
                 
-                const o = (Number(r.oilSecondReading||0)-Number(r.oilFirstReading||0)) + 
-                          (Number(r.oilSecondReading2||0)-Number(r.oilFirstReading2||0)) + 
-                          (Number(r.oilSecondReading3||0)-Number(r.oilFirstReading3||0));
+                const rowO = (Number(r.oilSecondReading||0)-Number(r.oilFirstReading||0)) + 
+                             (Number(r.oilSecondReading2||0)-Number(r.oilFirstReading2||0)) + 
+                             (Number(r.oilSecondReading3||0)-Number(r.oilFirstReading3||0));
 
-                sumP += p; sumD += d; sumO += o;
+                totalP += rowP; totalD += rowD; totalO += rowO;
 
                 const row = document.createElement('tr');
                 row.className = "hover:bg-gray-50 border-b";
                 row.innerHTML = `
-                    <td class="p-3 border">${r.currentDate}</td>
-                    <td class="p-3 border">${r.selectedId || 'N/A'}</td>
-                    <td class="p-3 border text-right font-bold text-green-700">${p.toFixed(2)}</td>
-                    <td class="p-3 border text-right font-bold text-green-700">${d.toFixed(2)}</td>
-                    <td class="p-3 border text-right font-bold text-green-700">${o.toFixed(2)}</td>
+                    <td class="p-2 border text-center whitespace-nowrap">${r.currentDate}</td>
+                    <td class="p-2 border text-center">${r.selectedId || 'N/A'}</td>
+                    <td class="p-2 border text-right">${r.firstReading1 || 0}</td><td class="p-2 border text-right font-semibold">${r.secondReading1 || 0}</td>
+                    <td class="p-2 border text-right">${r.firstReading2 || 0}</td><td class="p-2 border text-right font-semibold">${r.secondReading2 || 0}</td>
+                    <td class="p-2 border text-right">${r.firstReading3 || 0}</td><td class="p-2 border text-right font-semibold">${r.secondReading3 || 0}</td>
+                    <td class="p-2 border text-right">${r.dieselFirstReading1 || 0}</td><td class="p-2 border text-right font-semibold">${r.dieselSecondReading1 || 0}</td>
+                    <td class="p-2 border text-right">${r.dieselFirstReading2 || 0}</td><td class="p-2 border text-right font-semibold">${r.dieselSecondReading2 || 0}</td>
+                    <td class="p-2 border text-right">${r.dieselFirstReading3 || 0}</td><td class="p-2 border text-right font-semibold">${r.dieselSecondReading3 || 0}</td>
+                    <td class="p-2 border text-right font-bold text-orange-600">${rowP.toFixed(2)}</td>
+                    <td class="p-2 border text-right font-bold text-blue-600">${rowD.toFixed(2)}</td>
+                    <td class="p-2 border text-right font-bold text-green-600">${rowO.toFixed(2)}</td>
                 `;
                 container.appendChild(row);
             });
 
-            document.getElementById('totalPetrol').textContent = sumP.toFixed(2);
-            document.getElementById('totalDiesel').textContent = sumD.toFixed(2);
-            document.getElementById('totalOil').textContent = sumO.toFixed(2);
+            document.getElementById('grandTotalPetrol').textContent = totalP.toFixed(2);
+            document.getElementById('grandTotalDiesel').textContent = totalD.toFixed(2);
+            document.getElementById('grandTotalOil').textContent = totalO.toFixed(2);
         }
 
         function filterTable() {
-            const pickerDate = document.getElementById('dateSearch').value; // Returns YYYY-MM-DD
-            if (!pickerDate) {
-                renderTable(allReadings);
-                return;
-            }
-
-            // Since both match (YYYY-MM-DD), we compare directly
-            const filtered = allReadings.filter(r => {
-                return r.currentDate === pickerDate;
-            });
-            
-            renderTable(filtered);
-            document.getElementById('noDataMessage').classList.toggle('hidden', filtered.length > 0);
+            const pickerDate = document.getElementById('dateSearch').value;
+            renderTable(!pickerDate ? allReadings : allReadings.filter(r => r.currentDate === pickerDate));
+            const hasData = !pickerDate || allReadings.some(r => r.currentDate === pickerDate);
+            document.getElementById('noDataMessage').classList.toggle('hidden', hasData);
         }
 
         function resetFilter() {

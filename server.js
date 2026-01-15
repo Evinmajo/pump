@@ -60,6 +60,9 @@ app.get('/oil_stock', (req, res) => {
 app.get('/packed-oil-history', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'packed_oil_history.html'));
 });
+app.get('/excess-shot-report', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'excess_shot.html'));
+});
 // Serve static files from the 'public' directory
 // This middleware will now only handle requests that haven't been caught by the routes above
 app.use(express.static(path.join(__dirname, 'public')));
@@ -326,6 +329,66 @@ app.delete('/api/staff/:staffId', async (req, res) => {
     }
 });
 
+app.get('/api/reports/daily-excess-shot', async (req, res) => {
+    try {
+        const { date } = req.query;
+        if (!date) return res.status(400).json({ message: 'Date is required' });
+
+        const readings = await Reading.find({ currentDate: date });
+        const staffList = await Staff.find({});
+        const prices = await Price.getPrices();
+
+        const report = readings.map(reading => {
+            const staff = staffList.find(s => s.staffId === reading.selectedId);
+            
+            // Re-calculating required money and total money to find excess/shot
+            // Note: These calculations should mirror your logic in view.html
+            const petrolRequired = (
+                (reading.secondReading1 - reading.firstReading1) +
+                (reading.secondReading2 - reading.firstReading2) +
+                (reading.secondReading3 - reading.firstReading3) -
+                reading.petrolTestQuantity
+            ) * reading.petrol;
+
+            const dieselRequired = (
+                (reading.dieselSecondReading1 - reading.dieselFirstReading1) +
+                (reading.dieselSecondReading2 - reading.dieselFirstReading2) +
+                (reading.dieselSecondReading3 - reading.dieselFirstReading3) -
+                reading.dieselTestQuantity
+            ) * reading.diesel;
+
+            const oilRequired = (
+                (reading.oilSecondReading - reading.oilFirstReading) +
+                (reading.oilSecondReading2 - reading.oilFirstReading2) +
+                (reading.oilSecondReading3 - reading.oilFirstReading3)
+            ) * reading.oil;
+
+            const totalRequired = petrolRequired + dieselRequired + oilRequired;
+
+            const totalCollected = (
+                (reading.note500 * 500) + (reading.note200 * 200) + (reading.note100 * 100) +
+                (reading.note50 * 50) + (reading.note20 * 20) + (reading.note10 * 10) +
+                (reading.note5 * 5) + reading.coins +
+                reading.creditEntries.reduce((sum, e) => sum + e.amount, 0) -
+                reading.debitEntries.reduce((sum, e) => sum + e.amount, 0)
+            );
+
+            return {
+                staffName: staff ? staff.name : reading.selectedId,
+                required: totalRequired.toFixed(2),
+                collected: totalCollected.toFixed(2),
+                excessShot: (totalCollected - totalRequired).toFixed(2)
+            };
+        });
+
+        res.status(200).json(report);
+    } catch (error) {
+        res.status(500).json({ message: 'Error generating report', error: error.message });
+    }
+});
+
+
+
 app.get('/api/transactions/packedOil', async (req, res) => {
     try {
         const { fromDate, toDate, oilType } = req.query;
@@ -334,7 +397,11 @@ app.get('/api/transactions/packedOil', async (req, res) => {
         if (fromDate && toDate) {
             query.currentDate = { $gte: fromDate, $lte: toDate };
         }
-
+         const allStaff = await Staff.find({});
+        const staffMap = {};
+        allStaff.forEach(s => {
+            staffMap[s.staffId] = s.name;
+        });
         // Fetch readings and only the necessary fields
         const readings = await Reading.find(query).select('currentDate packedOilEntries selectedId');
 
@@ -347,7 +414,7 @@ app.get('/api/transactions/packedOil', async (req, res) => {
                     if (!oilType || oilType === 'All' || entry.name === oilType) {
                         history.push({
                             date: reading.currentDate,
-                            staffId: reading.selectedId,
+                            staffName: staffMap[reading.selectedId] || reading.selectedId,
                             name: entry.name,
                             quantity: entry.amount,
                             price: entry.price,

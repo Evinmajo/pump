@@ -3,329 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oil Stock Management</title>
+    <title>Oil Stock Manager</title>
     <style>
-        /* Basic CSS for styling */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
-            margin: auto;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        .stock-display {
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-            padding: 15px;
-            border-radius: 5px;
-            background-color: #e9e9e9;
-        }
-        .stock-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px dashed #ccc;
-        }
-        .stock-item:last-child {
-            border-bottom: none;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input[type="text"],
-        .form-group input[type="number"] {
-            width: calc(100% - 22px);
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .buttons button {
-            padding: 10px 15px;
-            margin-right: 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .buttons button.add {
-            background-color: #28a745;
-            color: white;
-        }
-        .buttons button.update {
-            background-color: #007bff;
-            color: white;
-        }
-        .buttons button.delete {
-            background-color: #dc3545;
-            color: white;
-        }
-        .message {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 4px;
-            display: none; /* Hidden by default, shown via JavaScript */
-        }
-        .message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
+        :root { --p: #2563eb; --s: #059669; --d: #dc2626; --bg: #f8fafc; --c: #fff; }
+        body { font-family: system-ui, sans-serif; margin: 0; background: var(--bg); color: #1e293b; line-height: 1.5; }
+        .nav { background: var(--c); padding: 1rem; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: var(--p); text-align: center; }
+        .container { max-width: 1000px; margin: 1.5rem auto; padding: 0 1rem; display: grid; gap: 1.5rem; grid-template-columns: 1fr 350px; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+        .card { background: var(--c); padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; font-size: 1.1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem; }
+        .item { display: flex; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; border-radius: 4px; }
+        .item:hover { background: #f1f5f9; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem; }
+        input { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        .btn-box { display: grid; gap: 0.5rem; margin-top: 1rem; }
+        button { padding: 0.7rem; border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; }
+        .add { background: var(--s); } .upd { background: var(--p); } .del { background: transparent; color: var(--d); border: 1px solid var(--d); }
+        .msg { margin-top: 1rem; padding: 0.5rem; border-radius: 4px; font-size: 0.85rem; display: none; text-align: center; }
     </style>
 </head>
 <body>
+    <div class="nav">Oil Stock Control</div>
     <div class="container">
-        <h1>Oil Stock Management System</h1>
-
-        ---
-
-        <h2>Current Packed Oil Stock</h2>
-        <div class="stock-display" id="stockDisplay">
-            <p>Loading stock...</p>
+        <div class="card">
+            <h2>Live Inventory</h2>
+            <div id="stockDisplay"><p style="text-align:center;color:#64748b">Loading...</p></div>
         </div>
-
-        ---
-
-        <h2>Manage Stock</h2>
-        <div class="form-group">
-            <label for="oilType">Oil Type:</label>
-            <input type="text" id="oilType" placeholder="e.g., Sunflower Oil, Palm Oil">
-        </div>
-        <div class="form-group">
-            <label for="quantity">Quantity (Liters/Units):</label>
-            <input type="number" id="quantity" min="0" value="0" step="any">
-        </div>
-        <div class="buttons">
-            <button class="add" id="addButton">Add Stock</button>
-            <button class="update" id="updateButton">Update Stock</button>
-            <button class="delete" id="deleteButton">Delete Stock</button>
-        </div>
-        <div class="message" id="messageArea"></div>
-        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-
-            <h2>Oil Usage History</h2>
-            <div class="stock-display" id="usageHistoryDisplay">
-                <p>Loading history...</p>
+        <div class="card">
+            <h2>Manage</h2>
+            <div class="form-group"><label>Oil Type</label><input type="text" id="oilType" placeholder="Product name"></div>
+            <div class="form-group"><label>Quantity</label><input type="number" id="qty" value="0" step="any"></div>
+            <div class="btn-box">
+                <button class="add" id="addBtn">Add Stock</button>
+                <button class="upd" id="updBtn">Update Selected</button>
+                <button class="del" id="delBtn">Delete</button>
             </div>
+            <div id="msg" class="msg"></div>
+        </div>
     </div>
-
     <script>
-        const stockDisplay = document.getElementById('stockDisplay');
-        const oilTypeInput = document.getElementById('oilType');
-        const quantityInput = document.getElementById('quantity');
-        const addButton = document.getElementById('addButton');
-        const updateButton = document.getElementById('updateButton');
-        const deleteButton = document.getElementById('deleteButton');
-        const messageArea = document.getElementById('messageArea');
+        const $ = id => document.getElementById(id);
+        const disp = $('stockDisplay'), typeInp = $('oilType'), qtyInp = $('qty'), msg = $('msg');
 
-        // Function to display messages to the user
-        function displayMessage(message, type) {
-            messageArea.textContent = message;
-            messageArea.className = `message ${type}`;
-            messageArea.style.display = 'block';
-            setTimeout(() => {
-                messageArea.style.display = 'none';
-            }, 3000); // Hide after 3 seconds
-        }
+        function showMsg(t, c) { msg.textContent = t; msg.style.display = 'block'; msg.style.background = c === 's' ? '#dcfce7' : '#fee2e2'; setTimeout(() => msg.style.display = 'none', 3000); }
 
-        // Function to fetch and render stock data from the backend
-        async function renderStock() {
-            stockDisplay.innerHTML = '<p>Loading stock...</p>';
+        async function load() {
             try {
-                const response = await fetch('/api/oilStock'); // Fetch from your backend API
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const stockData = await response.json();
-
-                stockDisplay.innerHTML = ''; // Clear existing stock
-                if (stockData.length === 0) {
-                    stockDisplay.innerHTML = '<p>No stock currently available.</p>';
-                    return;
-                }
-                stockData.forEach(item => {
-                    const div = document.createElement('div');
-                    div.classList.add('stock-item');
-                    // Use item._id for selection as it's the MongoDB ID
-                    div.innerHTML = `
-                        <span><strong>${item.type}</strong></span>
-                        <span>Quantity: ${item.quantity}</span>`;
-                    div.addEventListener('click', () => {
-                        // When an item is clicked, populate the input fields for easy update/delete
-                        oilTypeInput.value = item.type;
-                        quantityInput.value = item.quantity;
-                        oilTypeInput.dataset.selectedId = item._id; // Store MongoDB _id for update/delete
-                    });
-                    stockDisplay.appendChild(div);
+                const r = await fetch('/api/oilStock');
+                const data = await r.json();
+                disp.innerHTML = data.length ? '' : '<p style="text-align:center">Empty</p>';
+                data.forEach(i => {
+                    const d = document.createElement('div'); d.className = 'item';
+                    d.innerHTML = `<b>${i.type}</b><span>${i.quantity}</span>`;
+                    d.onclick = () => { typeInp.value = i.type; qtyInp.value = i.quantity; typeInp.dataset.id = i._id; };
+                    disp.appendChild(d);
                 });
-            } catch (error) {
-                console.error('Error fetching stock:', error);
-                displayMessage('Failed to load stock. Please try again.', 'error');
-                stockDisplay.innerHTML = '<p>Error loading stock.</p>';
-            }
+            } catch (e) { showMsg('Load failed', 'e'); }
         }
 
-        // Function to fetch and render usage history from the backend
-async function renderHistory() {
-    const historyDisplay = document.getElementById('usageHistoryDisplay');
-    historyDisplay.innerHTML = '<p>Loading history...</p>';
-    try {
-        // Fetch historical packed oil entries from the existing API
-        const response = await fetch('/api/transactions/packedOil'); 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const historyData = await response.json();
-        historyDisplay.innerHTML = ''; 
+        const req = async (m, url, b) => {
+            try {
+                const r = await fetch(url, { method: m, headers: {'Content-Type': 'application/json'}, body: b ? JSON.stringify(b) : null });
+                if (!r.ok) throw r;
+                showMsg('Success', 's'); load(); typeInp.value = ''; qtyInp.value = 0; delete typeInp.dataset.id;
+            } catch (e) { showMsg('Action failed', 'e'); }
+        };
 
-        if (historyData.length === 0) {
-            historyDisplay.innerHTML = '<p>No usage history found.</p>';
-            return;
-        }
-
-        // Create a list of history items
-        historyData.forEach(entry => {
-            const div = document.createElement('div');
-            div.classList.add('stock-item');
-            // entry.date comes from reading.currentDate in index.html
-            div.innerHTML = `
-                <span><strong>${entry.date}</strong> - ${entry.name}</span>
-                <span>Used: ${entry.quantity} | Staff: ${entry.staffId}</span>
-            `;
-            historyDisplay.appendChild(div);
-        });
-    } catch (error) {
-        console.error('Error fetching history:', error);
-        historyDisplay.innerHTML = '<p>Error loading history.</p>';
-    }
-}
-
-// Update the initial render to include history
-renderStock();
-renderHistory();
-
-        // Add Stock (POST request to /api/oilStock)
-        addButton.addEventListener('click', async () => {
-            const type = oilTypeInput.value.trim();
-            // Changed parsing to parseFloat to handle decimal values
-            const quantity = parseFloat(quantityInput.value); 
-
-            if (type && !isNaN(quantity) && quantity >= 0) {
-                try {
-                    const response = await fetch('/api/oilStock', { // POST to add or increment
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ type, quantity })
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                    }
-
-                    displayMessage('Stock added successfully!', 'success');
-                    oilTypeInput.value = '';
-                    quantityInput.value = 0;
-                    delete oilTypeInput.dataset.selectedId;
-                    renderStock(); // Re-render stock after successful operation
-                } catch (error) {
-                    console.error('Error adding stock:', error);
-                    displayMessage(`Error adding stock: ${error.message}`, 'error');
-                }
-            } else {
-                displayMessage('Please enter valid oil type and quantity.', 'error');
-            }
-        });
-
-        // Update Stock (PUT request to /api/oilStock/:id)
-        updateButton.addEventListener('click', async () => {
-            const selectedId = oilTypeInput.dataset.selectedId; // Get the MongoDB _id
-            const newType = oilTypeInput.value.trim();
-            // Changed parsing to parseFloat to handle decimal values
-            const newQuantity = parseFloat(quantityInput.value);
-
-            if (selectedId && newType && !isNaN(newQuantity) && newQuantity >= 0) {
-                try {
-                    const response = await fetch(`/api/oilStock/${selectedId}`, { // PUT to update
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ type: newType, quantity: newQuantity }) // Send updated type and quantity
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                    }
-
-                    displayMessage('Stock updated successfully!', 'success');
-                    oilTypeInput.value = '';
-                    quantityInput.value = 0;
-                    delete oilTypeInput.dataset.selectedId; // Clear selected ID
-                    renderStock();
-                } catch (error) {
-                    console.error('Error updating stock:', error);
-                    displayMessage(`Error updating stock: ${error.message}`, 'error');
-                }
-            } else {
-                displayMessage('Please select an item and enter valid details to update.', 'error');
-            }
-        });
-
-        // Delete Stock (DELETE request to /api/oilStock/:id)
-        deleteButton.addEventListener('click', async () => {
-            const selectedId = oilTypeInput.dataset.selectedId; // Get the MongoDB _id
-
-            if (selectedId) {
-                if (confirm('Are you sure you want to delete this stock item?')) {
-                    try {
-                        const response = await fetch(`/api/oilStock/${selectedId}`, { // DELETE to remove
-                            method: 'DELETE'
-                        });
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                        }
-
-                        displayMessage('Stock deleted successfully!', 'success');
-                        oilTypeInput.value = '';
-                        quantityInput.value = 0;
-                        delete oilTypeInput.dataset.selectedId; // Clear selected ID
-                        renderStock();
-                    } catch (error) {
-                        console.error('Error deleting stock:', error);
-                        displayMessage(`Error deleting stock: ${error.message}`, 'error');
-                    }
-                }
-            } else {
-                displayMessage('Please select an item to delete.', 'error');
-            }
-        });
-
-        // Initial render when the page loads
-        renderStock();
+        $('addBtn').onclick = () => req('POST', '/api/oilStock', {type: typeInp.value, quantity: parseFloat(qtyInp.value)});
+        $('updBtn').onclick = () => typeInp.dataset.id && req('PUT', `/api/oilStock/${typeInp.dataset.id}`, {type: typeInp.value, quantity: parseFloat(qtyInp.value)});
+        $('delBtn').onclick = () => typeInp.dataset.id && confirm('Delete?') && req('DELETE', `/api/oilStock/${typeInp.dataset.id}`);
+        load();
     </script>
 </body>
 </html>

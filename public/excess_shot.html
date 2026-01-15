@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Excess/Shot Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Daily Staff Excess/Shot Report</h1>
+        
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block font-semibold mb-1">From Date:</label>
+                <input type="date" id="fromDate" class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">To Date:</label>
+                <input type="date" id="toDate" class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Filter Staff:</label>
+                <select id="staffSelect" class="w-full border p-2 rounded">
+                    <option value="All">All Staff</option>
+                </select>
+            </div>
+            <button onclick="fetchReport()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">View Report</button>
+        </div>
+
+        <table class="w-full text-left border-collapse border">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="p-3 border">Staff Name</th>
+                    <th class="p-3 border">Required Money</th>
+                    <th class="p-3 border">Collected Money</th>
+                    <th class="p-3 border">Excess / (Shot)</th>
+                </tr>
+            </thead>
+            <tbody id="reportTableBody">
+                <tr><td colspan="4" class="p-4 text-center text-gray-500">Select date range to begin</td></tr>
+            </tbody>
+            <tfoot id="reportTableFoot">
+                </tfoot>
+        </table>
+    </div>
+
+    <script>
+        // Populate staff dropdown on load using existing API
+        document.addEventListener('DOMContentLoaded', async () => {
+            const res = await fetch('/api/staff');
+            const staff = await res.json();
+            const select = document.getElementById('staffSelect');
+            staff.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.name;
+                opt.textContent = s.name;
+                select.appendChild(opt);
+            });
+        });
+
+        async function fetchReport() {
+            const from = document.getElementById('fromDate').value;
+            const to = document.getElementById('toDate').value;
+            const selectedStaff = document.getElementById('staffSelect').value;
+
+            if (!from || !to) return alert('Please select both dates');
+
+            const tbody = document.getElementById('reportTableBody');
+            const tfoot = document.getElementById('reportTableFoot');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>';
+            tfoot.innerHTML = '';
+
+            const start = new Date(from);
+            const end = new Date(to);
+            let hasData = false;
+            let grandTotalExcessShot = 0;
+            const tempFragment = document.createDocumentFragment();
+
+            // Loop through each day in the range
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateStr = d.toISOString().split('T')[0];
+                const response = await fetch(`/api/reports/daily-excess-shot?date=${dateStr}`);
+                let dayData = await response.json();
+
+                // Filter by staff if specific staff is selected
+                if (selectedStaff !== 'All') {
+                    dayData = dayData.filter(row => row.staffName === selectedStaff);
+                }
+
+                if (dayData.length > 0) {
+                    hasData = true;
+                    // Create Date Heading Row
+                    const headerRow = document.createElement('tr');
+                    headerRow.className = "bg-blue-50 font-bold text-blue-800";
+                    headerRow.innerHTML = `<td colspan="4" class="p-2 border text-center">Date: ${dateStr}</td>`;
+                    tempFragment.appendChild(headerRow);
+
+                    // Add individual staff rows for that date
+                    dayData.forEach(row => {
+                        const excessVal = parseFloat(row.excessShot);
+                        grandTotalExcessShot += excessVal; // Accumulate for Grand Total
+                        
+                        const isShot = excessVal < 0;
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="p-3 border pl-8">${row.staffName}</td>
+                            <td class="p-3 border">${row.required}</td>
+                            <td class="p-3 border">${row.collected}</td>
+                            <td class="p-3 border font-bold ${isShot ? 'text-red-600' : 'text-green-600'}">
+                                ${row.excessShot}
+                            </td>
+                        `;
+                        tempFragment.appendChild(tr);
+                    });
+                }
+            }
+
+            tbody.innerHTML = '';
+            if (!hasData) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No data found for this range.</td></tr>';
+            } else {
+                tbody.appendChild(tempFragment);
+                
+                // Append Grand Total Row to Table Foot
+                const isGrandShot = grandTotalExcessShot < 0;
+                tfoot.innerHTML = `
+                    <tr class="bg-gray-800 text-white font-bold">
+                        <td colspan="3" class="p-3 border text-right">Grand Total Excess/Shot:</td>
+                        <td class="p-3 border ${isGrandShot ? 'text-red-400' : 'text-green-400'}">
+                            ${grandTotalExcessShot.toFixed(2)}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
