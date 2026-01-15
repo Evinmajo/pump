@@ -379,7 +379,15 @@
             const isNozzleValid = (secondId, firstId, label) => {
                 const first = parseFloat(document.getElementById(firstId).value) || 0;
                 const second = parseFloat(document.getElementById(secondId).value) || 0;
-                const diff = second - first;
+                let diff;
+                if (second >= first) {
+                    diff = second - first;
+                } else {
+                    // Handle rollover for a 15-digit meter (999,999,999,999,999)
+                    // 10^15 is 1,000,000,000,000,000
+                    const maxValue = 1000000000000000; 
+                    diff = (maxValue - first) + second;
+                }
                 if (diff < 0 || diff > 2000) {
                     showMessageBox(`${label} difference must be between 0 and 2000.`, 'error');
                     return false;
