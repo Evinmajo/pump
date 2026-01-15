@@ -397,8 +397,12 @@
             if (submitButton) { submitButton.disabled = true; submitButton.textContent = 'Submitting...'; }
 
             const data = {};
-            const inputs = document.querySelectorAll('input[type="number"]:not([readonly]), input[type="date"]');
-            inputs.forEach(input => { data[input.id] = input.value; });
+            const inputs = document.querySelectorAll('input[type="number"], input[type="date"]');
+            inputs.forEach(input => { 
+                if(input.id) { // Only add to data if the input has an ID
+                    data[input.id] = input.value; 
+                }
+            });
 
             data['selectedId'] = document.getElementById('selectedId').value;
             data['petrol'] = parseFloat(document.getElementById('petrol').value) || 0;
