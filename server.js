@@ -332,62 +332,86 @@ app.delete('/api/staff/:staffId', async (req, res) => {
 app.get('/api/reports/daily-excess-shot', async (req, res) => {
     try {
         const { date } = req.query;
-        if (!date) return res.status(400).json({ message: 'Date is required' });
-
         const readings = await Reading.find({ currentDate: date });
         const staffList = await Staff.find({});
-        const prices = await Price.getPrices();
 
         const report = readings.map(reading => {
             const staff = staffList.find(s => s.staffId === reading.selectedId);
+            const name = staff ? staff.name : reading.selectedId;
+
+            console.log(`--- Calculating for Staff: ${name} ---`);
+
+            // 1. OIL SALES: (Second - First) * Price
+            const oilReq = ((Number(reading.oilSecondReading || 0) - Number(reading.oilFirstReading || 0)) +
+                            (Number(reading.oilSecondReading2 || 0) - Number(reading.oilFirstReading2 || 0)) +
+                            (Number(reading.oilSecondReading3 || 0) - Number(reading.oilFirstReading3 || 0))) * Number(reading.oil || 0);
+            console.log(`Oil Money: ${oilReq}`);
+
+            // 2. PETROL SALES: (Second - First) * Price
+            const petrolReq = ((Number(reading.secondReading1 || 0) - Number(reading.firstReading1 || 0)) +
+                               (Number(reading.secondReading2 || 0) - Number(reading.firstReading2 || 0)) +
+                               (Number(reading.secondReading3 || 0) - Number(reading.firstReading3 || 0))) * Number(reading.petrol || 0);
+            console.log(`Petrol Money: ${petrolReq}`);
+
+            // 3. DIESEL SALES: (Second - First) * Price
+            const dieselReq = ((Number(reading.dieselSecondReading1 || 0) - Number(reading.dieselFirstReading1 || 0)) +
+                               (Number(reading.dieselSecondReading2 || 0) - Number(reading.dieselFirstReading2 || 0)) +
+                               (Number(reading.dieselSecondReading3 || 0) - Number(reading.dieselFirstReading3 || 0))) * Number(reading.diesel || 0);
+            console.log(`Diesel Money: ${dieselReq}`);
+
+            // 4. WATER & ACID
+            const waterMoney = (Number(reading.batteryWater30 || 0) * 30) + 
+                               (Number(reading.batteryWater60 || 0) * 60) + 
+                               (Number(reading.batteryWater150 || 0) * 150) + 
+                               Number(reading.acidWater || 0);
+
+            // 5. PACKED OIL
+            const packedOilMoney = (reading.packedOilEntries || []).reduce((sum, e) => sum + (Number(e.price) || 0), 0);
+            console.log(`Packed Oil Total: ${packedOilMoney}`);
+
+            // 6. CREDIT & DEBIT
+            const totalCredit = (reading.creditEntries || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+            const totalDebit = (reading.debitEntries || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+            console.log(`Credits: ${totalCredit}, Debits: ${totalDebit}`);
+
+            // 7. TEST QUANTITIES (Liters)
+           const petrolTestMoney = Number(reading.petrolTestQuantity || 0) * Number(reading.petrol || 0);
+            const dieselTestMoney = Number(reading.dieselTestQuantity || 0) * Number(reading.diesel || 0);
+            const totalTestMoney = petrolTestMoney + dieselTestMoney;
             
-            // Re-calculating required money and total money to find excess/shot
-            // Note: These calculations should mirror your logic in view.html
-            const petrolRequired = (
-                (reading.secondReading1 - reading.firstReading1) +
-                (reading.secondReading2 - reading.firstReading2) +
-                (reading.secondReading3 - reading.firstReading3) -
-                reading.petrolTestQuantity
-            ) * reading.petrol;
+            console.log(`Test Money Subtracted: ${totalTestMoney}`);
 
-            const dieselRequired = (
-                (reading.dieselSecondReading1 - reading.dieselFirstReading1) +
-                (reading.dieselSecondReading2 - reading.dieselFirstReading2) +
-                (reading.dieselSecondReading3 - reading.dieselFirstReading3) -
-                reading.dieselTestQuantity
-            ) * reading.diesel;
-
-            const oilRequired = (
-                (reading.oilSecondReading - reading.oilFirstReading) +
-                (reading.oilSecondReading2 - reading.oilFirstReading2) +
-                (reading.oilSecondReading3 - reading.oilFirstReading3)
-            ) * reading.oil;
-
-            const totalRequired = petrolRequired + dieselRequired + oilRequired;
-
-            const totalCollected = (
-                (reading.note500 * 500) + (reading.note200 * 200) + (reading.note100 * 100) +
-                (reading.note50 * 50) + (reading.note20 * 20) + (reading.note10 * 10) +
-                (reading.note5 * 5) + reading.coins +
-                reading.creditEntries.reduce((sum, e) => sum + e.amount, 0) -
-                reading.debitEntries.reduce((sum, e) => sum + e.amount, 0)
+            // 8. DENOMINATIONS
+            const totalDenomination = (
+                (Number(reading.note500 || 0) * 500) + (Number(reading.note200 || 0) * 200) +
+                (Number(reading.note100 || 0) * 100) + (Number(reading.note50 || 0) * 50) +
+                (Number(reading.note20 || 0) * 20) + (Number(reading.note10 || 0) * 10) +
+                (Number(reading.note5 || 0) * 5) + Number(reading.coins || 0)
             );
+            console.log(`Cash Denominations: ${totalDenomination}`);
+
+            // THE FINAL FORMULA PROVIDED BY YOU:
+            // (Oil + Petrol + Diesel + Water + Acid + Packed + Credit) - (Debit + Tests + Denomination)
+            const result = (totalCredit + totalTestMoney + totalDenomination) - (oilReq + petrolReq + dieselReq + waterMoney + packedOilMoney + totalDebit);
+            const requiredmoney =   (oilReq + petrolReq + dieselReq + waterMoney + packedOilMoney + totalDebit ) - (totalCredit + totalTestMoney);
+             console.log(`required money: ${requiredmoney}`);
+            console.log(`FINAL CALCULATION RESULT: ${result}`);
+            console.log(`--------------------------------------`);
 
             return {
-                staffName: staff ? staff.name : reading.selectedId,
-                required: totalRequired.toFixed(2),
-                collected: totalCollected.toFixed(2),
-                excessShot: (totalCollected - totalRequired).toFixed(2)
+                staffName: name,
+                required: requiredmoney.toFixed(2),
+                collected: totalDenomination.toFixed(2),
+                excessShot: result.toFixed(2)
             };
         });
 
         res.status(200).json(report);
     } catch (error) {
-        res.status(500).json({ message: 'Error generating report', error: error.message });
+        console.error("CRITICAL ERROR:", error);
+        res.status(500).json({ message: 'Error' });
     }
 });
-
-
 
 app.get('/api/transactions/packedOil', async (req, res) => {
     try {
