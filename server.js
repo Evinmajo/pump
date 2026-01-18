@@ -592,20 +592,40 @@ app.get('/api/reading/:id', async (req, res) => {
     }
 });
 
+// NEW: API Endpoint to delete multiple readings at once
+app.post('/api/readings/bulk-delete', async (req, res) => {
+    try {
+        const { ids } = req.body; // Expects ['id1', 'id2', ...]
+        if (!ids || ids.length === 0) return res.status(400).send('No IDs provided');
+
+        await Reading.deleteMany({ _id: { $in: ids } });
+        res.status(200).json({ message: 'Selected records deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting records' });
+    }
+});
+
 // API Endpoint to search readings by date and/or ID (GET request for admin.html)
 app.get('/api/readings', async (req, res) => {
     try {
-        const { searchDate, searchId } = req.query;
+        const { searchDate, searchId, limit } = req.query; // Get limit from query
         let filter = {};
 
         if (searchDate) {
             filter.currentDate = searchDate;
         }
         if (searchId) {
-            filter.selectedId = searchId; // searchId refers to the staffId now
+            filter.selectedId = searchId;
         }
 
-        const readings = await Reading.find(filter).sort({ timestamp: -1 });
+        let query = Reading.find(filter).sort({ timestamp: -1 });
+
+        // Apply limit if provided and not "0" (which means 'All')
+        if (limit && limit !== "0") {
+            query = query.limit(parseInt(limit));
+        }
+
+        const readings = await query;
         res.status(200).json(readings);
     } catch (error) {
         console.error('Error fetching readings:', error);

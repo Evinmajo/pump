@@ -40,22 +40,38 @@
                 <tr><td colspan="4" class="p-4 text-center text-gray-500">Select date range to begin</td></tr>
             </tbody>
             <tfoot id="reportTableFoot">
-                </tfoot>
+            </tfoot>
         </table>
     </div>
 
     <script>
-        // Populate staff dropdown on load using existing API
+        // Populate staff dropdown and set default dates on load
         document.addEventListener('DOMContentLoaded', async () => {
-            const res = await fetch('/api/staff');
-            const staff = await res.json();
-            const select = document.getElementById('staffSelect');
-            staff.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.name;
-                opt.textContent = s.name;
-                select.appendChild(opt);
-            });
+            // --- Set Default Dates ---
+            const today = new Date();
+            const formatDate = (date) => date.toISOString().split('T')[0];
+
+            // Default 'To Date' to today
+            document.getElementById('toDate').value = formatDate(today);
+
+            // Default 'From Date' to the first of the current month
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            document.getElementById('fromDate').value = formatDate(firstDay);
+
+            // --- Load Staff List ---
+            try {
+                const res = await fetch('/api/staff');
+                const staff = await res.json();
+                const select = document.getElementById('staffSelect');
+                staff.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.name;
+                    opt.textContent = s.name;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error("Failed to load staff list", err);
+            }
         });
 
         async function fetchReport() {
@@ -67,70 +83,85 @@
 
             const tbody = document.getElementById('reportTableBody');
             const tfoot = document.getElementById('reportTableFoot');
+            
             tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>';
             tfoot.innerHTML = '';
 
             const start = new Date(from);
             const end = new Date(to);
-            let hasData = false;
-            let grandTotalExcessShot = 0;
-            const tempFragment = document.createDocumentFragment();
-
-            // Loop through each day in the range
+            
+            const dateList = [];
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                const dateStr = d.toISOString().split('T')[0];
-                const response = await fetch(`/api/reports/daily-excess-shot?date=${dateStr}`);
-                let dayData = await response.json();
-
-                // Filter by staff if specific staff is selected
-                if (selectedStaff !== 'All') {
-                    dayData = dayData.filter(row => row.staffName === selectedStaff);
-                }
-
-                if (dayData.length > 0) {
-                    hasData = true;
-                    // Create Date Heading Row
-                    const headerRow = document.createElement('tr');
-                    headerRow.className = "bg-blue-50 font-bold text-blue-800";
-                    headerRow.innerHTML = `<td colspan="4" class="p-2 border text-center">Date: ${dateStr}</td>`;
-                    tempFragment.appendChild(headerRow);
-
-                    // Add individual staff rows for that date
-                    dayData.forEach(row => {
-                        const excessVal = parseFloat(row.excessShot);
-                        grandTotalExcessShot += excessVal; // Accumulate for Grand Total
-                        
-                        const isShot = excessVal < 0;
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td class="p-3 border pl-8">${row.staffName}</td>
-                            <td class="p-3 border">${row.required}</td>
-                            <td class="p-3 border">${row.collected}</td>
-                            <td class="p-3 border font-bold ${isShot ? 'text-red-600' : 'text-green-600'}">
-                                ${row.excessShot}
-                            </td>
-                        `;
-                        tempFragment.appendChild(tr);
-                    });
-                }
+                dateList.push(d.toISOString().split('T')[0]);
             }
 
-            tbody.innerHTML = '';
-            if (!hasData) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No data found for this range.</td></tr>';
-            } else {
-                tbody.appendChild(tempFragment);
-                
-                // Append Grand Total Row to Table Foot
-                const isGrandShot = grandTotalExcessShot < 0;
-                tfoot.innerHTML = `
-                    <tr class="bg-gray-800 text-white font-bold">
-                        <td colspan="3" class="p-3 border text-right">Grand Total Excess/Shot:</td>
-                        <td class="p-3 border ${isGrandShot ? 'text-red-400' : 'text-green-400'}">
-                            ${grandTotalExcessShot.toFixed(2)}
-                        </td>
-                    </tr>
-                `;
+            try {
+                const fetchPromises = dateList.map(dateStr => 
+                    fetch(`/api/reports/daily-excess-shot?date=${dateStr}`)
+                        .then(res => res.json())
+                        .then(data => ({ date: dateStr, data }))
+                );
+
+                const allResults = await Promise.all(fetchPromises);
+
+                let hasData = false;
+                let grandTotalExcessShot = 0;
+                const tempFragment = document.createDocumentFragment();
+
+                allResults.forEach(result => {
+                    let dayData = result.data;
+                    const dateStr = result.date;
+
+                    if (selectedStaff !== 'All') {
+                        dayData = dayData.filter(row => row.staffName === selectedStaff);
+                    }
+
+                    if (dayData.length > 0) {
+                        hasData = true;
+                        
+                        const headerRow = document.createElement('tr');
+                        headerRow.className = "bg-blue-50 font-bold text-blue-800";
+                        headerRow.innerHTML = `<td colspan="4" class="p-2 border text-center">Date: ${dateStr}</td>`;
+                        tempFragment.appendChild(headerRow);
+
+                        dayData.forEach(row => {
+                            const excessVal = parseFloat(row.excessShot);
+                            grandTotalExcessShot += excessVal;
+                            
+                            const isShot = excessVal < 0;
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="p-3 border pl-8">${row.staffName}</td>
+                                <td class="p-3 border">${row.required}</td>
+                                <td class="p-3 border">${row.collected}</td>
+                                <td class="p-3 border font-bold ${isShot ? 'text-red-600' : 'text-green-600'}">
+                                    ${row.excessShot}
+                                </td>
+                            `;
+                            tempFragment.appendChild(tr);
+                        });
+                    }
+                });
+
+                tbody.innerHTML = '';
+                if (!hasData) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">No data found for this range.</td></tr>';
+                } else {
+                    tbody.appendChild(tempFragment);
+                    
+                    const isGrandShot = grandTotalExcessShot < 0;
+                    tfoot.innerHTML = `
+                        <tr class="bg-gray-800 text-white font-bold">
+                            <td colspan="3" class="p-3 border text-right">Grand Total Excess/Shot:</td>
+                            <td class="p-3 border ${isGrandShot ? 'text-red-400' : 'text-green-400'}">
+                                ${grandTotalExcessShot.toFixed(2)}
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error fetching report:", error);
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading report. Please try again.</td></tr>';
             }
         }
     </script>
