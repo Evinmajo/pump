@@ -393,7 +393,7 @@ app.get('/api/reports/daily-excess-shot', async (req, res) => {
             // THE FINAL FORMULA PROVIDED BY YOU:
             // (Oil + Petrol + Diesel + Water + Acid + Packed + Credit) - (Debit + Tests + Denomination)
             const result = (totalCredit + totalTestMoney + totalDenomination) - (oilReq + petrolReq + dieselReq + waterMoney + packedOilMoney + totalDebit);
-            const requiredmoney =   (oilReq + petrolReq + dieselReq + waterMoney + packedOilMoney + totalDebit ) - (totalCredit + totalTestMoney);
+            const requiredmoney = (totalCredit + totalTestMoney) - (oilReq + petrolReq + dieselReq + waterMoney + packedOilMoney + totalDebit );
              console.log(`required money: ${requiredmoney}`);
             console.log(`FINAL CALCULATION RESULT: ${result}`);
             console.log(`--------------------------------------`);
