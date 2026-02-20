@@ -451,13 +451,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
+                const result = await response.json(); // Wait for the full server confirmation
 
                 if (response.ok) {
                     showMessageBox('Data saved successfully!', 'success');
                     document.getElementById('packedOilEntriesContainer').innerHTML = '';
                     setTimeout(() => {
                         window.location.reload();
-                    }, 1500);
+                    }, 3000);
                 } else {
                     showMessageBox('Failed to save data.', 'error');
                 }
