@@ -176,7 +176,7 @@ const readingSchema = new mongoose.Schema({
     note5: { type: Number, default: 0 },
     coins: { type: Number, default: 0 },
     timestamp: { type: Date, default: Date.now } // Add timestamp
-});
+}, { bufferCommands: false });
 
 const Reading = mongoose.model('Reading', readingSchema);
 
@@ -553,7 +553,8 @@ app.post('/api/saveReading', async (req, res) => {
     try {
         const data = req.body;
         const newReading = new Reading(req.body);
-        await newReading.save();
+        // Change your save line to this:
+        await newReading.save({ w: 'majority', j: true });
 
         if (data.packedOilEntries && data.packedOilEntries.length > 0) {
             for (const entry of data.packedOilEntries){
