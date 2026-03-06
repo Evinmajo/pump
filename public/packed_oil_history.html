@@ -41,6 +41,13 @@
                 </thead>
                 <tbody id="historyTableBody" class="divide-y divide-gray-200">
                     </tbody>
+                <tfoot id="historyTableFoot" class="bg-gray-100 font-bold hidden">
+                    <tr>
+                        <td colspan="2" class="px-4 py-3 text-right text-sm text-gray-700 uppercase">Grand Total:</td>
+                        <td id="totalQty" class="px-4 py-3 text-center text-sm text-gray-900">0</td>
+                        <td id="totalPrice" class="px-4 py-3 text-center text-sm text-gray-900">₹0</td>
+                        <td></td> </tr>
+                </tfoot>    
             </table>
         </div>
         <div id="noDataMessage" class="hidden text-center py-10 text-gray-500">No sales records found for this period.</div>
@@ -51,6 +58,7 @@
             const fromDate = document.getElementById('fromDate').value;
             const toDate = document.getElementById('toDate').value;
             const tbody = document.getElementById('historyTableBody');
+            const tfoot = document.getElementById('historyTableFoot');
             const noData = document.getElementById('noDataMessage');
 
             try {
@@ -60,11 +68,17 @@
                 tbody.innerHTML = '';
                 if (data.length === 0) {
                     noData.classList.remove('hidden');
+                    tfoot.classList.add('hidden');
                     return;
                 }
                 noData.classList.add('hidden');
+                tfoot.classList.remove('hidden');
+                let grandTotalQty = 0;
+                let grandTotalPrice = 0;
 
                 data.forEach(item => {
+                    grandTotalQty += Number(item.quantity) || 0;
+            grandTotalPrice += Number(item.price) || 0;
                     const row = `
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700">${item.date}</td>
@@ -76,6 +90,8 @@
                     `;
                     tbody.innerHTML += row;
                 });
+                document.getElementById('totalQty').innerText = grandTotalQty;
+        document.getElementById('totalPrice').innerText = `₹${grandTotalPrice.toLocaleString()}`;
             } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to load history.');
