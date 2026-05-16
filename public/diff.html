@@ -82,74 +82,84 @@
         </div>
     </div>
 
-    <script>
-        let allReadings = [];
+     <script>
+    let allReadings = [];
 
-        async function loadData() {
-            try {
-                const response = await fetch('/api/readings');
-                allReadings = await response.json();
-                renderTable(allReadings);
-            } catch (err) { console.error("Fetch Error:", err); }
-        }
-
-        function renderTable(data) {
-            const container = document.getElementById('diffTableBody');
-            container.innerHTML = '';
-            let totalP = 0, totalD = 0, totalO = 0;
-
-            data.forEach(r => {
-                const rowP = (Number(r.secondReading1||0)-Number(r.firstReading1||0)) + 
-                             (Number(r.secondReading2||0)-Number(r.firstReading2||0)) + 
-                             (Number(r.secondReading3||0)-Number(r.firstReading3||0));
-                
-                const rowD = (Number(r.dieselSecondReading1||0)-Number(r.dieselFirstReading1||0)) + 
-                             (Number(r.dieselSecondReading2||0)-Number(r.dieselFirstReading2||0)) + 
-                             (Number(r.dieselSecondReading3||0)-Number(r.dieselFirstReading3||0));
-                
-                const rowO = (Number(r.oilSecondReading||0)-Number(r.oilFirstReading||0)) + 
-                             (Number(r.oilSecondReading2||0)-Number(r.oilFirstReading2||0)) + 
-                             (Number(r.oilSecondReading3||0)-Number(r.oilFirstReading3||0));
-
-                totalP += rowP; totalD += rowD; totalO += rowO;
-
-                const row = document.createElement('tr');
-                row.className = "hover:bg-gray-50 border-b";
-                row.innerHTML = `
-                    <td class="p-2 border text-center whitespace-nowrap">${r.currentDate}</td>
-                    <td class="p-2 border text-center">${r.selectedId || 'N/A'}</td>
-                    <td class="p-2 border text-right">${r.firstReading1 || 0}</td><td class="p-2 border text-right font-semibold">${r.secondReading1 || 0}</td>
-                    <td class="p-2 border text-right">${r.firstReading2 || 0}</td><td class="p-2 border text-right font-semibold">${r.secondReading2 || 0}</td>
-                    <td class="p-2 border text-right">${r.firstReading3 || 0}</td><td class="p-2 border text-right font-semibold">${r.secondReading3 || 0}</td>
-                    <td class="p-2 border text-right">${r.dieselFirstReading1 || 0}</td><td class="p-2 border text-right font-semibold">${r.dieselSecondReading1 || 0}</td>
-                    <td class="p-2 border text-right">${r.dieselFirstReading2 || 0}</td><td class="p-2 border text-right font-semibold">${r.dieselSecondReading2 || 0}</td>
-                    <td class="p-2 border text-right">${r.dieselFirstReading3 || 0}</td><td class="p-2 border text-right font-semibold">${r.dieselSecondReading3 || 0}</td>
-                    <td class="p-2 border text-right font-bold text-orange-600">${rowP.toFixed(2)}</td>
-                    <td class="p-2 border text-right font-bold text-blue-600">${rowD.toFixed(2)}</td>
-                    <td class="p-2 border text-right font-bold text-green-600">${rowO.toFixed(2)}</td>
-                `;
-                container.appendChild(row);
-            });
-
-            document.getElementById('grandTotalPetrol').textContent = totalP.toFixed(2);
-            document.getElementById('grandTotalDiesel').textContent = totalD.toFixed(2);
-            document.getElementById('grandTotalOil').textContent = totalO.toFixed(2);
-        }
-
-        function filterTable() {
-            const pickerDate = document.getElementById('dateSearch').value;
-            renderTable(!pickerDate ? allReadings : allReadings.filter(r => r.currentDate === pickerDate));
-            const hasData = !pickerDate || allReadings.some(r => r.currentDate === pickerDate);
-            document.getElementById('noDataMessage').classList.toggle('hidden', hasData);
-        }
-
-        function resetFilter() {
-            document.getElementById('dateSearch').value = '';
+    async function loadData() {
+        try {
+            const response = await fetch('/api/readings');
+            allReadings = await response.json();
             renderTable(allReadings);
-            document.getElementById('noDataMessage').classList.add('hidden');
-        }
+        } catch (err) { console.error("Fetch Error:", err); }
+    }
 
-        window.onload = loadData;
-    </script>
+    function renderTable(data) {
+        const container = document.getElementById('diffTableBody');
+        container.innerHTML = '';
+        let totalP = 0, totalD = 0, totalO = 0;
+
+        data.forEach(r => {
+            // Petrol: Rounded to nearest whole integer if >= 0.5
+            const rowP = Math.round(
+                (Number(r.secondReading1||0)-Number(r.firstReading1||0)) + 
+                (Number(r.secondReading2||0)-Number(r.firstReading2||0)) + 
+                (Number(r.secondReading3||0)-Number(r.firstReading3||0))
+            );
+            
+            // Diesel: Rounded to nearest whole integer if >= 0.5
+            const rowD = Math.round(
+                (Number(r.dieselSecondReading1||0)-Number(r.dieselFirstReading1||0)) + 
+                (Number(r.dieselSecondReading2||0)-Number(r.dieselFirstReading2||0)) + 
+                (Number(r.dieselSecondReading3||0)-Number(r.dieselFirstReading3||0))
+            );
+            
+            // Oil: Back to your original, exact fractional values (No rounding)
+            const rowO = (Number(r.oilSecondReading||0)-Number(r.oilFirstReading||0)) + 
+                         (Number(r.oilSecondReading2||0)-Number(r.oilFirstReading2||0)) + 
+                         (Number(r.oilSecondReading3||0)-Number(r.oilFirstReading3||0));
+
+            totalP += rowP; 
+            totalD += rowD; 
+            totalO += rowO;
+
+            const row = document.createElement('tr');
+            row.className = "hover:bg-gray-50 border-b";
+            row.innerHTML = `
+                <td class="p-2 border text-center whitespace-nowrap">${r.currentDate}</td>
+                <td class="p-2 border text-center">${r.selectedId || 'N/A'}</td>
+                <td class="p-2 border text-right">${Math.round(r.firstReading1 || 0)}</td><td class="p-2 border text-right font-semibold">${Math.round(r.secondReading1 || 0)}</td>
+                <td class="p-2 border text-right">${Math.round(r.firstReading2 || 0)}</td><td class="p-2 border text-right font-semibold">${Math.round(r.secondReading2 || 0)}</td>
+                <td class="p-2 border text-right">${Math.round(r.firstReading3 || 0)}</td><td class="p-2 border text-right font-semibold">${Math.round(r.secondReading3 || 0)}</td>
+                <td class="p-2 border text-right">${Math.round(r.dieselFirstReading1 || 0)}</td><td class="p-2 border text-right font-semibold">${Math.round(r.dieselSecondReading1 || 0)}</td>
+                <td class="p-2 border text-right">${Math.round(r.dieselFirstReading2 || 0)}</td><td class="p-2 border text-right font-semibold">${Math.round(r.dieselSecondReading2 || 0)}</td>
+                <td class="p-2 border text-right">${Math.round(r.dieselFirstReading3 || 0)}</td><td class="p-2 border text-right font-semibold">${Math.round(r.dieselSecondReading3 || 0)}</td>
+                <td class="p-2 border text-right font-bold text-orange-600">${rowP}</td>
+                <td class="p-2 border text-right font-bold text-blue-600">${rowD}</td>
+                <td class="p-2 border text-right font-bold text-green-600">${rowO.toFixed(2)}</td>
+            `;
+            container.appendChild(row);
+        });
+
+        // Display Grand Totals (Petrol/Diesel as whole numbers, Oil keeping its decimals)
+        document.getElementById('grandTotalPetrol').textContent = totalP;
+        document.getElementById('grandTotalDiesel').textContent = totalD;
+        document.getElementById('grandTotalOil').textContent = totalO.toFixed(2);
+    }
+
+    function filterTable() {
+        const pickerDate = document.getElementById('dateSearch').value;
+        renderTable(!pickerDate ? allReadings : allReadings.filter(r => r.currentDate === pickerDate));
+        const hasData = !pickerDate || allReadings.some(r => r.currentDate === pickerDate);
+        document.getElementById('noDataMessage').classList.toggle('hidden', hasData);
+    }
+
+    function resetFilter() {
+        document.getElementById('dateSearch').value = '';
+        renderTable(allReadings);
+        document.getElementById('noDataMessage').classList.add('hidden');
+    }
+
+    window.onload = loadData;
+</script>
 </body>
 </html>
