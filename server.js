@@ -180,6 +180,53 @@ const readingSchema = new mongoose.Schema({
 
 const Reading = mongoose.model('Reading', readingSchema);
 
+const oilStockHistorySchema = new mongoose.Schema({
+    date: { 
+        type: String, 
+        required: true, 
+        unique: true // Prevents duplicate entries for the same day
+    },
+    packedOils: [{
+        type: String,
+        quantity: Number
+    }],
+    timestamp: { 
+        type: Date, 
+        default: Date.now 
+    }
+});
+
+const OilStockHistory = mongoose.model('OilStockHistory', oilStockHistorySchema);
+
+async function captureDailyOilSnapshot() {
+    try {
+        // Formats current date to YYYY-MM-DD in Indian Standard Time (IST)
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+
+        // Fetch current active oil inventory
+        const oilStocks = await OilStock.find({});
+        const oilsData = oilStocks.map(o => ({
+            type: o.type,
+            quantity: o.quantity
+        }));
+
+        // Upsert: Saves or updates if the cron triggers multiple times by accident
+        await OilStockHistory.findOneAndUpdate(
+            { date: todayStr },
+            {
+                date: todayStr,
+                packedOils: oilsData,
+                timestamp: new Date()
+            },
+            { upsert: true, new: true }
+        );
+
+        console.log(`[Snapshot Success] Packed oil logged automatically for: ${todayStr}`);
+    } catch (error) {
+        console.error('[Snapshot Error] Failed to auto-save daily stock:', error);
+    }
+}
+
 // NEW: Schema for Oil Stock (Inventory master list)
 const oilStockSchema = new mongoose.Schema({
     type: {
@@ -253,7 +300,24 @@ const Price = mongoose.model('Price', priceSchema);
 
 
 // --- API Endpoints for User Authentication ---
-
+app.post('/api/cron/capture-oil-snapshot', async (req, res) => {
+    // If mongoose hasn't connected yet during the boot-up, wait briefly or log an error
+    if (mongoose.connection.readyState !== 1) {
+        console.log("[Cron] Server is awake but database is connecting... waiting 3 seconds.");
+        await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+    
+    await captureDailyOilSnapshot();
+    res.status(200).json({ success: true, message: 'Oil stock snapshot saved successfully.' });
+});
+app.get('/api/oilStock/history', async (req, res) => {
+    try {
+        const history = await OilStockHistory.find({}).sort({ date: -1 });
+        res.status(200).json(history);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching history', error: error.message });
+    }
+});
 
 // Login User
 app.post('/api/login', async (req, res) => {
