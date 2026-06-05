@@ -184,17 +184,17 @@ const oilStockHistorySchema = new mongoose.Schema({
     date: { 
         type: String, 
         required: true, 
-        unique: true // Prevents duplicate entries for the same day
+        unique: true 
     },
     packedOils: [{
-        type: String,
-        quantity: Number
+        type: { type: String, required: true },
+        quantity: { type: Number, required: true }
     }],
     timestamp: { 
         type: Date, 
         default: Date.now 
     }
-});
+}, { collection: 'oil_stock_history' }); // Explicitly naming collection to ensure consistency
 
 const OilStockHistory = mongoose.model('OilStockHistory', oilStockHistorySchema);
 
