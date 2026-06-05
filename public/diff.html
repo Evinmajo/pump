@@ -163,186 +163,188 @@
                 console.error('Fetch error:', error);
             }
         }
-
         function renderInventoryHistory(history) {
-            const container = document.getElementById('inventoryHistoryContainer');
-            const tbody = document.getElementById('inventoryHistoryBody');
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
+    const container = document.getElementById('inventoryHistoryContainer');
+    const tbody = document.getElementById('inventoryHistoryBody');
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
 
-            let filteredHistory = history;
-            if (fromDate || toDate) {
-                filteredHistory = history.filter(h => {
-                    if (fromDate && h.date < fromDate) return false;
-                    if (toDate && h.date > toDate) return false;
-                    return true;
-                });
-            }
+    let filteredHistory = history;
+    if (fromDate || toDate) {
+        filteredHistory = history.filter(h => {
+            if (fromDate && h.date < fromDate) return false;
+            if (toDate && h.date > toDate) return false;
+            return true;
+        });
+    }
 
-            if (filteredHistory.length === 0) {
-                container.classList.add('hidden');
-                return;
-            }
+    if (filteredHistory.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
 
-            container.classList.remove('hidden');
-            tbody.innerHTML = '';
-            let totalLoss = 0;
+    container.classList.remove('hidden');
+    tbody.innerHTML = '';
+    let totalLoss = 0;
 
-            filteredHistory.forEach(h => {
-                const lossValue = h.type === 'AutomationCheck' ? (h.loss || 0) : 0;
-                totalLoss += lossValue;
+    filteredHistory.forEach(h => {
+        const lossValue = h.type === 'AutomationCheck' ? (h.loss || 0) : 0;
+        totalLoss += lossValue;
 
-                const pStk = h.pStock != null ? h.pStock.toFixed(2) : '-';
-                const dStk = h.dStock != null ? h.dStock.toFixed(2) : '-';
-                const sStk = h.sStock != null ? h.sStock.toFixed(2) : '-';
+        // Fallback for older records that might not have snapshot data
+        const pStk = h.pStock != null ? h.pStock.toFixed(2) : '-';
+        const dStk = h.dStock != null ? h.dStock.toFixed(2) : '-';
+        const sStk = h.sStock != null ? h.sStock.toFixed(2) : '-';
 
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-4 py-2 border-b">${h.date}</td>
-                        <td class="px-4 py-2 border-b font-semibold">${h.fuelType}</td>
-                        <td class="px-4 py-2 border-b text-gray-600">
-                            ${h.type === 'Load' ? (h.liters > 0 ? 'Stock Added' : 'Manual Reduction') : 
-                              h.type === 'Adjustment' ? 'Adjustment' : 'Automation Check'}
-                        </td>
-                        <td class="px-4 py-2 border-b font-mono text-blue-600">${h.liters.toFixed(2)}</td>
-                        
-                        <td class="px-4 py-2 border-b font-mono text-red-600 bg-red-50/30">${pStk}</td>
-                        <td class="px-4 py-2 border-b font-mono text-gray-800 bg-gray-50/50">${dStk}</td>
-                        <td class="px-4 py-2 border-b font-mono text-orange-600 bg-orange-50/30">${sStk}</td>
-                        
-                        <td class="px-4 py-2 border-b font-bold text-red-600">
-                            ${h.type === 'AutomationCheck' ? h.loss.toFixed(2) : '-'}
-                        </td>
-                    </tr>`;
-            });
-
-            document.getElementById('totalInventoryLoss').innerText = totalLoss.toFixed(2) + ' L';
-        }
-
-        function renderMasterTable(data) {
-            const tbody = document.getElementById('masterTableBody');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '';
-            const sortedData = [...data].sort((a, b) => new Date(b.currentDate) - new Date(a.currentDate));
-
-            const fmtMstr = (val) => val != null && val !== '' ? Math.round(Number(val)) : '-';
-
-            sortedData.forEach(r => {
-                const staffName = typeof staffMap !== 'undefined' ? (staffMap[r.selectedId] || r.selectedId) : r.selectedId;
-                const row = document.createElement('tr');
-                row.className = "hover:bg-gray-50 border-b border-gray-200 transition-colors";
+        tbody.innerHTML += `
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-2 border-b">${h.date}</td>
+                <td class="px-4 py-2 border-b font-semibold">${h.fuelType}</td>
+                <td class="px-4 py-2 border-b text-gray-600">
+                    ${h.type === 'Load' ? (h.liters > 0 ? 'Stock Added' : 'Manual Reduction') : 
+                      h.type === 'Adjustment' ? 'Adjustment' : 'Automation Check'}
+                </td>
+                <td class="px-4 py-2 border-b font-mono text-blue-600">${h.liters.toFixed(2)}</td>
                 
-                row.innerHTML = `
-                    <td class="border p-2 font-bold whitespace-nowrap">${r.currentDate}</td>
-                    <td class="border p-2 font-medium text-blue-700">${staffName}</td>
-                    <td class="border p-2 text-center">${r.shift || '-'}</td>
-                    
-                    <td class="border p-1 text-right bg-orange-50">${fmtMstr(r.firstReading1)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.secondReading1)}</td>
-                    <td class="border p-1 text-right bg-orange-50">${fmtMstr(r.firstReading2)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.secondReading2)}</td>
-                    <td class="border p-1 text-right bg-orange-50">${fmtMstr(r.firstReading3)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.secondReading3)}</td>
-                    <td class="border p-1 text-right bg-orange-50">${fmtMstr(r.firstReading4)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.secondReading4)}</td>
-                    <td class="border p-1 text-right bg-orange-50">${fmtMstr(r.firstReading5)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.secondReading5)}</td>
-                    <td class="border p-1 text-right bg-orange-50">${fmtMstr(r.firstReading6)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.secondReading6)}</td>
-                    
-                    <td class="border p-1 text-right bg-blue-50">${fmtMstr(r.dieselFirstReading1)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.dieselSecondReading1)}</td>
-                    <td class="border p-1 text-right bg-blue-50">${fmtMstr(r.dieselFirstReading2)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.dieselSecondReading2)}</td>
-                    <td class="border p-1 text-right bg-blue-50">${fmtMstr(r.dieselFirstReading3)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.dieselSecondReading3)}</td>
-                    <td class="border p-1 text-right bg-blue-50">${fmtMstr(r.dieselFirstReading4)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.dieselSecondReading4)}</td>
-                    <td class="border p-1 text-right bg-blue-50">${fmtMstr(r.dieselFirstReading5)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.dieselSecondReading5)}</td>
-                    <td class="border p-1 text-right bg-blue-50">${fmtMstr(r.dieselFirstReading6)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.dieselSecondReading6)}</td>
-                    
-                    <td class="border p-1 text-right bg-purple-50">${fmtMstr(r.speedFirstReading1)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.speedSecondReading1)}</td>
-                    <td class="border p-1 text-right bg-purple-50">${fmtMstr(r.speedFirstReading2)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.speedSecondReading2)}</td>
-                    <td class="border p-1 text-right bg-purple-50">${fmtMstr(r.speedFirstReading3)}</td><td class="border p-1 text-right font-bold">${fmtMstr(r.speedSecondReading3)}</td>
-                    
-                    <td class="border p-1 text-right bg-yellow-50">${r.oilFirstReading}</td>
-                    <td class="border p-1 text-right font-bold bg-yellow-100">${r.oilSecondReading}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+                <td class="px-4 py-2 border-b font-mono text-red-600 bg-red-50/30">${pStk}</td>
+                <td class="px-4 py-2 border-b font-mono text-gray-800 bg-gray-50/50">${dStk}</td>
+                <td class="px-4 py-2 border-b font-mono text-orange-600 bg-orange-50/30">${sStk}</td>
+                
+                <td class="px-4 py-2 border-b font-bold text-red-600">
+                    ${h.type === 'AutomationCheck' ? h.loss.toFixed(2) : '-'}
+                </td>
+            </tr>`;
+    });
 
-        function displayLastSubmittedReadings(data) {
-            const openingGrid = document.getElementById('openingReadingsGrid');
-            const lastGrid = document.getElementById('lastReadingsGrid');
-            const syncTime = document.getElementById('lastSyncTime');
+    document.getElementById('totalInventoryLoss').innerText = totalLoss.toFixed(2) + ' L';
+}
+function renderMasterTable(data) {
+    const tbody = document.getElementById('masterTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
 
-            if (!data || data.length === 0) {
-                const noDataHtml = '<p class="col-span-full text-center text-gray-400 text-xs py-4">No data available for this range</p>';
-                openingGrid.innerHTML = noDataHtml;
-                lastGrid.innerHTML = noDataHtml;
-                syncTime.innerText = "";
-                return;
-            }
+    // Sort data: newest dates at the top
+    const sortedData = [...data].sort((a, b) => new Date(b.currentDate) - new Date(a.currentDate));
 
-            const nozzleDefinitions = [
-                { label: "MS-1", openKey: "firstReading1", closeKey: "secondReading1" },
-                { label: "MS-2", openKey: "firstReading2", closeKey: "secondReading2" },
-                { label: "MS-3", openKey: "firstReading3", closeKey: "secondReading3" },
-                { label: "MS-4", openKey: "firstReading4", closeKey: "secondReading4" },
-                { label: "MS-5", openKey: "firstReading5", closeKey: "secondReading5" },
-                { label: "MS-6", openKey: "firstReading6", closeKey: "secondReading6" },
-                { label: "HSD-1", openKey: "dieselFirstReading1", closeKey: "dieselSecondReading1" },
-                { label: "HSD-2", openKey: "dieselFirstReading2", closeKey: "dieselSecondReading2" },
-                { label: "HSD-3", openKey: "dieselFirstReading3", closeKey: "dieselSecondReading3" },
-                { label: "HSD-4", openKey: "dieselFirstReading4", closeKey: "dieselSecondReading4" },
-                { label: "HSD-5", openKey: "dieselFirstReading5", closeKey: "dieselSecondReading5" },
-                { label: "HSD-6", openKey: "dieselFirstReading6", closeKey: "dieselSecondReading6" },
-                { label: "3A (SPD)", openKey: "speedFirstReading1", closeKey: "speedSecondReading1" },
-                { label: "4A (SPD)", openKey: "speedFirstReading2", closeKey: "speedSecondReading2" },
-                { label: "5A (SPD)", openKey: "speedFirstReading3", closeKey: "speedSecondReading3" }
-            ];
+    sortedData.forEach(r => {
+        // Get staff name from your staffMap (or use the ID if not found)
+        const staffName = typeof staffMap !== 'undefined' ? (staffMap[r.selectedId] || r.selectedId) : r.selectedId;
+        
+        const row = document.createElement('tr');
+        row.className = "hover:bg-gray-50 border-b border-gray-200 transition-colors";
+        
+        row.innerHTML = `
+            <td class="border p-2 font-bold whitespace-nowrap">${r.currentDate}</td>
+            <td class="border p-2 font-medium text-blue-700">${staffName}</td>
+            <td class="border p-2 text-center">${r.shift || '-'}</td>
+            
+            <td class="border p-1 text-right bg-orange-50">${Math.round(Number(r.firstReading1) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.secondReading1) || 0)}</td>
+            <td class="border p-1 text-right bg-orange-50">${Math.round(Number(r.firstReading2) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.secondReading2) || 0)}</td>
+            <td class="border p-1 text-right bg-orange-50">${Math.round(Number(r.firstReading3) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.secondReading3) || 0)}</td>
+            <td class="border p-1 text-right bg-orange-50">${Math.round(Number(r.firstReading4) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.secondReading4) || 0)}</td>
+            <td class="border p-1 text-right bg-orange-50">${Math.round(Number(r.firstReading5) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.secondReading5) || 0)}</td>
+            <td class="border p-1 text-right bg-orange-50">${Math.round(Number(r.firstReading6) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.secondReading6) || 0)}</td>
+            
+            <td class="border p-1 text-right bg-blue-50">${Math.round(Number(r.dieselFirstReading1) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.dieselSecondReading1) || 0)}</td>
+            <td class="border p-1 text-right bg-blue-50">${Math.round(Number(r.dieselFirstReading2) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.dieselSecondReading2) || 0)}</td>
+            <td class="border p-1 text-right bg-blue-50">${Math.round(Number(r.dieselFirstReading3) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.dieselSecondReading3) || 0)}</td>
+            <td class="border p-1 text-right bg-blue-50">${Math.round(Number(r.dieselFirstReading4) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.dieselSecondReading4) || 0)}</td>
+            <td class="border p-1 text-right bg-blue-50">${Math.round(Number(r.dieselFirstReading5) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.dieselSecondReading5) || 0)}</td>
+            <td class="border p-1 text-right bg-blue-50">${Math.round(Number(r.dieselFirstReading6) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.dieselSecondReading6) || 0)}</td>
+            
+            <td class="border p-1 text-right bg-purple-50">${Math.round(Number(r.speedFirstReading1) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.speedSecondReading1) || 0)}</td>
+            <td class="border p-1 text-right bg-purple-50">${Math.round(Number(r.speedFirstReading2) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.speedSecondReading2) || 0)}</td>
+            <td class="border p-1 text-right bg-purple-50">${Math.round(Number(r.speedFirstReading3) || 0)}</td><td class="border p-1 text-right font-bold">${Math.round(Number(r.speedSecondReading3) || 0)}</td>
+            
+            <td class="border p-1 text-right bg-yellow-50">${r.oilFirstReading}</td>
+            <td class="border p-1 text-right font-bold bg-yellow-100">${r.oilSecondReading}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+function displayLastSubmittedReadings(data) {
+    const openingGrid = document.getElementById('openingReadingsGrid');
+    const lastGrid = document.getElementById('lastReadingsGrid');
+    const syncTime = document.getElementById('lastSyncTime');
 
-            const processedData = nozzleDefinitions.map(nozzle => {
-                const openVal = data.reduce((min, entry) => {
-                    const val = Number(entry[nozzle.openKey]) || Infinity;
-                    return val < min ? val : min;
-                }, Infinity);
+    if (!data || data.length === 0) {
+        const noDataHtml = '<p class="col-span-full text-center text-gray-400 text-xs py-4">No data available for this range</p>';
+        openingGrid.innerHTML = noDataHtml;
+        lastGrid.innerHTML = noDataHtml;
+        syncTime.innerText = "";
+        return;
+    }
 
-                const closeVal = data.reduce((max, entry) => {
-                    const val = Number(entry[nozzle.closeKey]) || 0;
-                    return val > max ? val : max;
-                }, 0);
+    const nozzleDefinitions = [
+        { label: "MS-1", openKey: "firstReading1", closeKey: "secondReading1" },
+        { label: "MS-2", openKey: "firstReading2", closeKey: "secondReading2" },
+        { label: "MS-3", openKey: "firstReading3", closeKey: "secondReading3" },
+        { label: "MS-4", openKey: "firstReading4", closeKey: "secondReading4" },
+        { label: "MS-5", openKey: "firstReading5", closeKey: "secondReading5" },
+        { label: "MS-6", openKey: "firstReading6", closeKey: "secondReading6" },
+        { label: "HSD-1", openKey: "dieselFirstReading1", closeKey: "dieselSecondReading1" },
+        { label: "HSD-2", openKey: "dieselFirstReading2", closeKey: "dieselSecondReading2" },
+        { label: "HSD-3", openKey: "dieselFirstReading3", closeKey: "dieselSecondReading3" },
+        { label: "HSD-4", openKey: "dieselFirstReading4", closeKey: "dieselSecondReading4" },
+        { label: "HSD-5", openKey: "dieselFirstReading5", closeKey: "dieselSecondReading5" },
+        { label: "HSD-6", openKey: "dieselFirstReading6", closeKey: "dieselSecondReading6" },
+        { label: "3A (SPD)", openKey: "speedFirstReading1", closeKey: "speedSecondReading1" },
+        { label: "4A (SPD)", openKey: "speedFirstReading2", closeKey: "speedSecondReading2" },
+        { label: "5A (SPD)", openKey: "speedFirstReading3", closeKey: "speedSecondReading3" }
+    ];
 
-                const opening = openVal === Infinity ? 0 : openVal;
-                const closing = closeVal;
-                const sales = closing >= opening ? (closing - opening) : 0;
+    const processedData = nozzleDefinitions.map(nozzle => {
+        const openVal = data.reduce((min, entry) => {
+            const val = Number(entry[nozzle.openKey]) || Infinity;
+            return val < min ? val : min;
+        }, Infinity);
 
-                return { label: nozzle.label, opening, closing, sales };
-            });
+        const closeVal = data.reduce((max, entry) => {
+            const val = Number(entry[nozzle.closeKey]) || 0;
+            return val > max ? val : max;
+        }, 0);
 
-            const latestDateFound = data.reduce((latest, curr) => 
-                (curr.currentDate > latest ? curr.currentDate : latest), data[0].currentDate);
+        const opening = openVal === Infinity ? 0 : openVal;
+        const closing = closeVal;
+        const sales = closing >= opening ? (closing - opening) : 0;
 
-            syncTime.innerText = `Report generated up to: ${latestDateFound}`;
+        return { label: nozzle.label, opening, closing, sales };
+    });
 
-            openingGrid.innerHTML = processedData.map(n => `
-                <div class="bg-orange-50 border border-orange-100 rounded p-2 text-center shadow-sm">
-                    <p class="text-[9px] font-bold text-orange-500 uppercase tracking-tighter">${n.label}</p>
-                    <p class="text-xs font-black text-gray-800">${Math.round(n.opening).toLocaleString('en-IN')}</p>
-                </div>
-            `).join('');
+    const latestDateFound = data.reduce((latest, curr) => 
+        (curr.currentDate > latest ? curr.currentDate : latest), data[0].currentDate);
 
-            lastGrid.innerHTML = processedData.map(n => `
-                <div class="flex flex-col gap-1">
-                    <div class="bg-blue-50 border border-blue-100 rounded p-2 text-center shadow-sm">
-                        <p class="text-[9px] font-bold text-blue-500 uppercase tracking-tighter mb-1 border-b border-blue-100 pb-1">
-                            ${n.label}
-                        </p>
-                        <p class="text-[12px] font-black text-gray-700" title="Last Reading">
-                            ${Math.round(n.closing).toLocaleString('en-IN')}
-                        </p>
-                    </div>
-                    <div class="bg-green-100 border border-green-200 rounded p-1 text-center shadow-sm">
-                        <p class="text-[12px] font-bold text-green-600 uppercase leading-none">Sales (Ltrs)</p>
-                        <p class="text-[14px] font-black text-green-800">
-                            ${Math.round(n.sales)}
-                        </p>
-                    </div>
-                </div>
-            `).join('');
-        }
+    syncTime.innerText = `Report generated up to: ${latestDateFound}`;
+
+    // Opening Grid remains the same
+    openingGrid.innerHTML = processedData.map(n => `
+        <div class="bg-orange-50 border border-orange-100 rounded p-2 text-center shadow-sm">
+            <p class="text-[9px] font-bold text-orange-500 uppercase tracking-tighter">${n.label}</p>
+            <p class="text-xs font-black text-gray-800">${Math.round(n.opening).toLocaleString('en-IN')}</p>
+        </div>
+    `).join('');
+
+    // UPDATED: Last Readings Grid with individual boxes for each nozzle
+    lastGrid.innerHTML = processedData.map(n => `
+        <div class="flex flex-col gap-1">
+            <div class="bg-blue-50 border border-blue-100 rounded p-2 text-center shadow-sm">
+                <p class="text-[9px] font-bold text-blue-500 uppercase tracking-tighter mb-1 border-b border-blue-100 pb-1">
+                    ${n.label}
+                </p>
+                <p class="text-[12px] font-black text-gray-700" title="Last Reading">
+                    ${Math.round(n.closing).toLocaleString('en-IN')}
+                </p>
+            </div>
+            <div class="bg-green-100 border border-green-200 rounded p-1 text-center shadow-sm">
+                <p class="text-[12px] font-bold text-green-600 uppercase leading-none">Sales (Ltrs)</p>
+                <p class="text-[14px] font-black text-green-800">
+                    ${Math.round(n.sales)}
+                </p>
+            </div>
+        </div>
+    `).join('');
+}
 
         function renderShiftWiseTables(data) {
             const wrapper = document.getElementById('tablesWrapper');
@@ -359,15 +361,16 @@
             Object.keys(grouped).forEach(shiftName => {
                 const shiftData = grouped[shiftName];
                 
+                // 1. Calculate Cash Summary for this specific shift
                 const sSum = shiftData.reduce((acc, r) => {
                     const netP = ((r.secondReading1 - r.firstReading1) + (r.secondReading2 - r.firstReading2) + (r.secondReading3 - r.firstReading3) + (r.secondReading4 - r.firstReading4) + (r.secondReading5 - r.firstReading5) + (r.secondReading6 - r.firstReading6)) - (r.petrolTestQuantity || 0);
                     const netD = ((r.dieselSecondReading1 - r.dieselFirstReading1) + (r.dieselSecondReading2 - r.dieselFirstReading2) + (r.dieselSecondReading3 - r.dieselFirstReading3) + (r.dieselSecondReading4 - r.dieselFirstReading4) + (r.dieselSecondReading5 - r.dieselFirstReading5) + (r.dieselSecondReading6 - r.dieselFirstReading6)) - (r.dieselTestQuantity || 0);
                     const netS = ((r.speedSecondReading1 - r.speedFirstReading1) + (r.speedSecondReading2 - r.speedFirstReading2) + (r.speedSecondReading3 - r.speedFirstReading3)) - (r.speedTestQuantity || 0);
                     const netO = (Number(r.oilFirstReading) || 0) - (Number(r.oilSecondReading) || 0);
 
-                    acc.pVal += Math.round(netP) * (Number(r.petrol) || 0);
-                    acc.dVal += Math.round(netD) * (Number(r.diesel) || 0);
-                    acc.sVal += Math.round(netS) * (Number(r.speed) || 0);
+                    acc.pVal += netP * (Number(r.petrol) || 0);
+                    acc.dVal += netD * (Number(r.diesel) || 0);
+                    acc.sVal += netS * (Number(r.speed) || 0);
                     acc.oVal += netO * (Number(r.oil) || 0);
                     return acc;
                 }, { pVal:0, dVal:0, sVal:0, oVal:0 });
@@ -418,6 +421,7 @@
             renderDaySummary(data);
         }
 
+        
         function getTableHead() {
             return `
                 <thead class="bg-gray-100 text-gray-700 sticky top-0">
@@ -453,12 +457,8 @@
             const container = document.getElementById(bodyId);
             data.forEach(r => {
                 const staffName = staffMap[r.selectedId] || r.selectedId;
-                
-                const val = (f, s) => (f === s ? '' : Math.round(Number(f)));
-                const val2 = (f, s) => (f === s ? '' : Math.round(Number(s)));
-                
-                const valOil = (f, s) => (f === s ? '' : f);
-                const valOil2 = (f, s) => (f === s ? '' : s);
+                const val = (f, s) => (f === s ? '' : Math.round(Number(f) || 0));
+                const val2 = (f, s) => (f === s ? '' : Math.round(Number(s) || 0));
 
                 const gp = (Number(r.secondReading1) - Number(r.firstReading1)) + (Number(r.secondReading2) - Number(r.firstReading2)) + (Number(r.secondReading3) - Number(r.firstReading3)) + (Number(r.secondReading4) - Number(r.firstReading4)) + (Number(r.secondReading5) - Number(r.firstReading5)) + (Number(r.secondReading6) - Number(r.firstReading6));
                 const gd = (Number(r.dieselSecondReading1) - Number(r.dieselFirstReading1)) + (Number(r.dieselSecondReading2) - Number(r.dieselFirstReading2)) + (Number(r.dieselSecondReading3) - Number(r.dieselFirstReading3)) + (Number(r.dieselSecondReading4) - Number(r.dieselFirstReading4)) + (Number(r.dieselSecondReading5) - Number(r.dieselFirstReading5)) + (Number(r.dieselSecondReading6) - Number(r.dieselFirstReading6));
@@ -484,14 +484,14 @@
                     <td class="p-1 border text-right bg-purple-50">${val(r.speedFirstReading1, r.speedSecondReading1)}</td><td class="p-1 border text-right bg-purple-50">${val2(r.speedFirstReading1, r.speedSecondReading1)}</td>
                     <td class="p-1 border text-right bg-purple-50">${val(r.speedFirstReading2, r.speedSecondReading2)}</td><td class="p-1 border text-right bg-purple-50">${val2(r.speedFirstReading2, r.speedSecondReading2)}</td>
                     <td class="p-1 border text-right bg-purple-50">${val(r.speedFirstReading3, r.speedSecondReading3)}</td><td class="p-1 border text-right bg-purple-50">${val2(r.speedFirstReading3, r.speedSecondReading3)}</td>
-                    <td class="p-1 border text-right bg-yellow-50">${valOil(r.oilFirstReading, r.oilSecondReading)}</td><td class="p-1 border text-right bg-yellow-50">${valOil2(r.oilFirstReading, r.oilSecondReading)}</td>
+                    <td class="p-1 border text-right bg-yellow-50">${val(r.oilFirstReading, r.oilSecondReading)}</td><td class="p-1 border text-right bg-yellow-50">${val2(r.oilFirstReading, r.oilSecondReading)}</td>
                     <td class="p-1 border text-right text-gray-500 bg-gray-50">${Math.round(gp)}</td>
                     <td class="p-1 border text-right text-gray-500 bg-gray-50">${Math.round(gd)}</td>
                     <td class="p-1 border text-right text-gray-500 bg-gray-50">${Math.round(gs)}</td>
                     
-                    <td class="p-1 border text-right text-red-600 bg-red-50">${Math.round(r.petrolTestQuantity || 0)}</td>
-                    <td class="p-1 border text-right text-red-600 bg-red-50">${Math.round(r.dieselTestQuantity || 0)}</td>
-                    <td class="p-1 border text-right text-red-600 bg-red-50">${Math.round(r.speedTestQuantity || 0)}</td>
+                    <td class="p-1 border text-right text-red-600 bg-red-50">${Math.round(Number(r.petrolTestQuantity) || 0)}</td>
+                    <td class="p-1 border text-right text-red-600 bg-red-50">${Math.round(Number(r.dieselTestQuantity) || 0)}</td>
+                    <td class="p-1 border text-right text-red-600 bg-red-50">${Math.round(Number(r.speedTestQuantity) || 0)}</td>
 
                     <td class="p-1 border text-right font-bold text-orange-600">${Math.round(gp - (r.petrolTestQuantity || 0))}</td>
                     <td class="p-1 border text-right font-bold text-blue-600">${Math.round(gd - (r.dieselTestQuantity || 0))}</td>
@@ -502,13 +502,13 @@
             });
         }
 
-        function getTableFoot(data) {
+     function getTableFoot(data) {
             const t = data.reduce((acc, r) => {
                 const gp = (Number(r.secondReading1) - Number(r.firstReading1)) + (Number(r.secondReading2) - Number(r.firstReading2)) + (Number(r.secondReading3) - Number(r.firstReading3)) + (Number(r.secondReading4) - Number(r.firstReading4)) + (Number(r.secondReading5) - Number(r.firstReading5)) + (Number(r.secondReading6) - Number(r.firstReading6));
                 const gd = (Number(r.dieselSecondReading1) - Number(r.dieselFirstReading1)) + (Number(r.dieselSecondReading2) - Number(r.dieselFirstReading2)) + (Number(r.dieselSecondReading3) - Number(r.dieselFirstReading3)) + (Number(r.dieselSecondReading4) - Number(r.dieselFirstReading4)) + (Number(r.dieselSecondReading5) - Number(r.dieselFirstReading5)) + (Number(r.dieselSecondReading6) - Number(r.dieselFirstReading6));
                 const gs = (Number(r.speedSecondReading1) - Number(r.speedFirstReading1)) + (Number(r.speedSecondReading2) - Number(r.speedFirstReading2)) + (Number(r.speedSecondReading3) - Number(r.speedFirstReading3));
                 acc.gp += gp; acc.gd += gd; acc.gs += gs;
-                
+                // Add test totals
                 acc.tp += (Number(r.petrolTestQuantity) || 0);
                 acc.td += (Number(r.dieselTestQuantity) || 0);
                 acc.ts += (Number(r.speedTestQuantity) || 0);
@@ -540,240 +540,262 @@
                 </tfoot>`;
         }
         
-        function renderDaySummary(data) {
-            const wrapper = document.getElementById('tablesWrapper');
+          function renderDaySummary(data) {
+    const wrapper = document.getElementById('tablesWrapper');
 
-            const summaryData = data.reduce((acc, r) => {
-                const netP = ((Number(r.secondReading1) - Number(r.firstReading1)) + (Number(r.secondReading2) - Number(r.firstReading2)) + (Number(r.secondReading3) - Number(r.firstReading3)) + (Number(r.secondReading4) - Number(r.firstReading4)) + (Number(r.secondReading5) - Number(r.firstReading5)) + (Number(r.secondReading6) - Number(r.firstReading6))) - (Number(r.petrolTestQuantity) || 0);
-                const netD = ((Number(r.dieselSecondReading1) - Number(r.dieselFirstReading1)) + (Number(r.dieselSecondReading2) - Number(r.dieselFirstReading2)) + (Number(r.dieselSecondReading3) - Number(r.dieselFirstReading3)) + (Number(r.dieselSecondReading4) - Number(r.dieselFirstReading4)) + (Number(r.dieselSecondReading5) - Number(r.dieselFirstReading5)) + (Number(r.dieselSecondReading6) - Number(r.dieselFirstReading6))) - (Number(r.dieselTestQuantity) || 0);
-                const netS = ((Number(r.speedSecondReading1) - Number(r.speedFirstReading1)) + (Number(r.speedSecondReading2) - Number(r.speedFirstReading2)) + (Number(r.speedSecondReading3) - Number(r.speedFirstReading3))) - (Number(r.speedTestQuantity) || 0);
-                const netO = (Number(r.oilFirstReading) || 0) - (Number(r.oilSecondReading) || 0);
+    const summaryData = data.reduce((acc, r) => {
+        // Calculate Net Volumes
+        const netP = ((Number(r.secondReading1) - Number(r.firstReading1)) + (Number(r.secondReading2) - Number(r.firstReading2)) + (Number(r.secondReading3) - Number(r.firstReading3)) + (Number(r.secondReading4) - Number(r.firstReading4)) + (Number(r.secondReading5) - Number(r.firstReading5)) + (Number(r.secondReading6) - Number(r.firstReading6))) - (Number(r.petrolTestQuantity) || 0);
+        const netD = ((Number(r.dieselSecondReading1) - Number(r.dieselFirstReading1)) + (Number(r.dieselSecondReading2) - Number(r.dieselFirstReading2)) + (Number(r.dieselSecondReading3) - Number(r.dieselFirstReading3)) + (Number(r.dieselSecondReading4) - Number(r.dieselFirstReading4)) + (Number(r.dieselSecondReading5) - Number(r.dieselFirstReading5)) + (Number(r.dieselSecondReading6) - Number(r.dieselFirstReading6))) - (Number(r.dieselTestQuantity) || 0);
+        const netS = ((Number(r.speedSecondReading1) - Number(r.speedFirstReading1)) + (Number(r.speedSecondReading2) - Number(r.speedFirstReading2)) + (Number(r.speedSecondReading3) - Number(r.speedFirstReading3))) - (Number(r.speedTestQuantity) || 0);
+        const netO = (Number(r.oilFirstReading) || 0) - (Number(r.oilSecondReading) || 0);
 
-                const notesOnly = (
-                    (Number(r.note500) || 0) * 500 +
-                    (Number(r.note200) || 0) * 200 +
-                    (Number(r.note100) || 0) * 100 +
-                    (Number(r.note50) || 0) * 50 +
-                    (Number(r.note20) || 0) * 20 +
-                    (Number(r.note10) || 0) * 10 +
-                    (Number(r.note5) || 0) * 5
-                );
-                const coinsOnly = (Number(r.coins) || 0);
+        // Calculate Denominations for this specific record
+        const notesOnly = (
+            (Number(r.note500) || 0) * 500 +
+            (Number(r.note200) || 0) * 200 +
+            (Number(r.note100) || 0) * 100 +
+            (Number(r.note50) || 0) * 50 +
+            (Number(r.note20) || 0) * 20 +
+            (Number(r.note10) || 0) * 10 +
+            (Number(r.note5) || 0) * 5
+        );
+        const coinsOnly = (Number(r.coins) || 0);
 
-                acc.totalNotesOnly += notesOnly;
-                acc.totalPhysicalCash += (notesOnly + coinsOnly);
-                acc.totalCashBankDeposit += (Number(r.cashBankDeposit) || 0);
+        // Accumulate Denominations
+        acc.totalNotesOnly += notesOnly;
+        acc.totalPhysicalCash += (notesOnly + coinsOnly);
+        acc.totalCashBankDeposit += (Number(r.cashBankDeposit) || 0);
 
-                acc.totalExpensesBank += (r.expenseBankEntries || []).reduce((sum, eb) => sum + (Number(eb.amount) || 0), 0);
-                acc.totalExpenses += (r.expenseEntries || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-                acc.totalPackedOilPrice += (r.packedOilEntries || []).reduce((sum, po) => sum + (Number(po.price) || 0), 0);
-                acc.totalCredit += (r.creditEntries || []).reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
-                acc.totalDebit += (r.debitEntries || []).reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-                acc.totalDebitBank += (r.debitBankEntries || []).reduce((sum, db) => sum + (Number(db.amount) || 0), 0);
+        // Aggregate Expenses, Packed Oil, Credit, and Debit
+        acc.totalExpensesBank += (r.expenseBankEntries || []).reduce((sum, eb) => sum + (Number(eb.amount) || 0), 0);
+        acc.totalExpenses += (r.expenseEntries || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+        acc.totalPackedOilPrice += (r.packedOilEntries || []).reduce((sum, po) => sum + (Number(po.price) || 0), 0);
+        acc.totalCredit += (r.creditEntries || []).reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+        acc.totalDebit += (r.debitEntries || []).reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+        acc.totalDebitBank += (r.debitBankEntries || []).reduce((sum, db) => sum + (Number(db.amount) || 0), 0);
 
-                acc.pVol += netP; acc.dVol += netD; acc.sVol += netS; acc.oVol += netO;
-                acc.pVal += Math.round(netP) * (Number(r.petrol) || 0);
-                acc.dVal += Math.round(netD) * (Number(r.diesel) || 0);
-                acc.sVal += Math.round(netS) * (Number(r.speed) || 0);
-                acc.oVal += netO * (Number(r.oil) || 0); 
-                
-                return acc;
-            }, { 
-                pVal:0, dVal:0, sVal:0, oVal:0, 
-                pVol:0, dVol:0, sVol:0, oVol:0, 
-                totalExpensesBank: 0,
-                totalExpenses:0, totalCredit:0, totalDebit:0,
-                totalPackedOilPrice: 0,
-                totalNotesOnly: 0,
-                totalPhysicalCash: 0,
-                totalDebitBank: 0,
-                totalCashBankDeposit: 0
-            });
+        // Volumes and Monetary Values
+        acc.pVol += netP; acc.dVol += netD; acc.sVol += netS; acc.oVol += netO;
+        acc.pVal += netP * (Number(r.petrol) || 0);
+        acc.dVal += netD * (Number(r.diesel) || 0);
+        acc.sVal += netS * (Number(r.speed) || 0);
+        acc.oVal += netO * (Number(r.oil) || 0); 
+        
+        return acc;
+    }, { 
+        pVal:0, dVal:0, sVal:0, oVal:0, 
+        pVol:0, dVol:0, sVol:0, oVol:0, 
+        totalExpensesBank: 0,
+        totalExpenses:0, totalCredit:0, totalDebit:0,
+        totalPackedOilPrice: 0,
+        totalNotesOnly: 0,
+        totalPhysicalCash: 0,
+        totalDebitBank: 0,
+        totalCashBankDeposit: 0
+    });
 
-            const netNotesInHand = summaryData.totalNotesOnly - summaryData.totalCashBankDeposit;
-            const netTotalCashWithCoins = summaryData.totalPhysicalCash - summaryData.totalCashBankDeposit;
+    const netNotesInHand = summaryData.totalNotesOnly - summaryData.totalCashBankDeposit;
+    const netTotalCashWithCoins = summaryData.totalPhysicalCash - summaryData.totalCashBankDeposit;
 
-            const totalRevenue = summaryData.pVal + summaryData.dVal + summaryData.sVal + summaryData.oVal + summaryData.totalPackedOilPrice;
-            const netFinalAmount = totalRevenue - summaryData.totalExpenses;
+    const totalRevenue = summaryData.pVal + summaryData.dVal + summaryData.sVal + summaryData.oVal + summaryData.totalPackedOilPrice;
+    const netFinalAmount = totalRevenue - summaryData.totalExpenses;
 
-            const summary = document.createElement('div');
-            summary.className = "mt-12 p-6 bg-gray-50 rounded-xl border-2 border-blue-200";
-            summary.innerHTML = `
-                <h2 class="text-2xl font-bold text-blue-900 mb-6 border-b-2 border-blue-100 pb-2 text-center underline">Grand Day Summary</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="bg-orange-100 p-4 rounded-lg shadow-sm text-center">
-                        <p class="text-orange-800 font-bold uppercase text-xs">Petrol</p>
-                        <p class="text-sm font-semibold text-orange-700">${Math.round(summaryData.pVol)} L</p>
-                        <p class="text-xl font-black text-orange-900">₹${summaryData.pVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+    const summary = document.createElement('div');
+    summary.className = "mt-12 p-6 bg-gray-50 rounded-xl border-2 border-blue-200";
+    summary.innerHTML = `
+        <h2 class="text-2xl font-bold text-blue-900 mb-6 border-b-2 border-blue-100 pb-2 text-center underline">Grand Day Summary</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-orange-100 p-4 rounded-lg shadow-sm text-center">
+                <p class="text-orange-800 font-bold uppercase text-xs">Petrol</p>
+                <p class="text-sm font-semibold text-orange-700">${Math.round(summaryData.pVol)} L</p>
+                <p class="text-xl font-black text-orange-900">₹${summaryData.pVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="bg-blue-100 p-4 rounded-lg shadow-sm text-center">
+                <p class="text-blue-800 font-bold uppercase text-xs">Diesel</p>
+                <p class="text-sm font-semibold text-blue-700">${Math.round(summaryData.dVol)} L</p>
+                <p class="text-xl font-black text-blue-900">₹${summaryData.dVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="bg-purple-100 p-4 rounded-lg shadow-sm text-center">
+                <p class="text-purple-800 font-bold uppercase text-xs">Speed</p>
+                <p class="text-sm font-semibold text-purple-700">${Math.round(summaryData.sVol)} L</p>
+                <p class="text-xl font-black text-purple-900">₹${summaryData.sVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+            </div>
+            <div class="bg-yellow-100 p-4 rounded-lg shadow-sm text-center">
+                <p class="text-yellow-800 font-bold uppercase text-xs">Loose Oil</p>
+                <p class="text-sm font-semibold text-yellow-700">${summaryData.oVol.toFixed(2)} L</p>
+                <p class="text-xl font-black text-yellow-900">₹${summaryData.oVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
+            </div>
+        </div>
+    
+        <div class="mt-6 space-y-3">
+            <a href="/staff-denominations">
+                <div class="p-4 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-center text-emerald-800">
+                    <div class="flex flex-col">
+                        <span class="font-bold uppercase text-sm tracking-wide">Total Collected (Notes in Hand):</span>
+                        <span class="text-[10px] opacity-70 italic font-medium">Gross: ₹${summaryData.totalNotesOnly.toLocaleString()} | Dep: ₹${summaryData.totalCashBankDeposit.toLocaleString()}</span>
                     </div>
-                    <div class="bg-blue-100 p-4 rounded-lg shadow-sm text-center">
-                        <p class="text-blue-800 font-bold uppercase text-xs">Diesel</p>
-                        <p class="text-sm font-semibold text-blue-700">${Math.round(summaryData.dVol)} L</p>
-                        <p class="text-xl font-black text-blue-900">₹${summaryData.dVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                    </div>
-                    <div class="bg-purple-100 p-4 rounded-lg shadow-sm text-center">
-                        <p class="text-purple-800 font-bold uppercase text-xs">Speed</p>
-                        <p class="text-sm font-semibold text-purple-700">${Math.round(summaryData.sVol)} L</p>
-                        <p class="text-xl font-black text-purple-900">₹${summaryData.sVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                    </div>
-                    <div class="bg-yellow-100 p-4 rounded-lg shadow-sm text-center">
-                        <p class="text-yellow-800 font-bold uppercase text-xs">Loose Oil</p>
-                        <p class="text-sm font-semibold text-yellow-700">${summaryData.oVol.toFixed(2)} L</p>
-                        <p class="text-xl font-black text-yellow-900">₹${summaryData.oVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</p>
-                    </div>
+                    <span class="text-xl font-bold">₹${netNotesInHand.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </div>
-            
-                <div class="mt-6 space-y-3">
-                    <a href="/staff-denominations">
-                        <div class="p-4 bg-emerald-50 border border-emerald-100 rounded-lg flex justify-between items-center text-emerald-800">
-                            <div class="flex flex-col">
-                                <span class="font-bold uppercase text-sm tracking-wide">Total Collected (Notes in Hand):</span>
-                                <span class="text-[10px] opacity-70 italic font-medium">Gross: ₹${summaryData.totalNotesOnly.toLocaleString()} | Dep: ₹${summaryData.totalCashBankDeposit.toLocaleString()}</span>
-                            </div>
-                            <span class="text-xl font-bold">₹${netNotesInHand.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </a>
+            </a>
 
-                    <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg flex justify-between items-center text-gray-600">
-                        <span class="font-bold uppercase text-sm tracking-wide">Cash Bank Deposit:</span>
-                        <span class="text-xl font-bold">₹${summaryData.totalCashBankDeposit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg flex justify-between items-center text-gray-600">
+                <span class="font-bold uppercase text-sm tracking-wide">Cash Bank Deposit:</span>
+                <span class="text-xl font-bold">₹${summaryData.totalCashBankDeposit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+            </div>
+
+            <a href="/staff-denominations">
+                <div class="p-4 bg-teal-50 border border-teal-100 rounded-lg flex justify-between items-center text-teal-800">
+                    <div class="flex flex-col">
+                        <span class="font-bold uppercase text-sm tracking-wide">Total Collected (Notes + Coins in Hand):</span>
+                        <span class="text-[10px] opacity-70 italic font-medium">Gross: ₹${summaryData.totalPhysicalCash.toLocaleString()} | Dep: ₹${summaryData.totalCashBankDeposit.toLocaleString()}</span>
                     </div>
-
-                    <a href="/staff-denominations">
-                        <div class="p-4 bg-teal-50 border border-teal-100 rounded-lg flex justify-between items-center text-teal-800">
-                            <div class="flex flex-col">
-                                <span class="font-bold uppercase text-sm tracking-wide">Total Collected (Notes + Coins in Hand):</span>
-                                <span class="text-[10px] opacity-70 italic font-medium">Gross: ₹${summaryData.totalPhysicalCash.toLocaleString()} | Dep: ₹${summaryData.totalCashBankDeposit.toLocaleString()}</span>
-                            </div>
-                            <span class="text-xl font-bold">₹${netTotalCashWithCoins.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </a>
-
-                    <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
-                        <div class="p-4 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center text-red-700">
-                            <span class="font-bold uppercase text-sm tracking-wide">Total Daily Expenses:</span>
-                            <span class="text-xl font-bold">- ₹${summaryData.totalExpenses.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </a>
-
-                    <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
-                        <div class="p-4 bg-fuchsia-50 border border-fuchsia-100 rounded-lg flex justify-between items-center text-fuchsia-700">
-                            <span class="font-bold uppercase text-sm tracking-wide">Total Daily Expenses (Bank/Online):</span>
-                            <span class="text-xl font-bold">- ₹${summaryData.totalExpensesBank.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </a>
-
-                    <a href="/packed-oil-history">
-                        <div class="p-4 bg-yellow-50 border border-yellow-100 rounded-lg flex justify-between items-center text-yellow-800">
-                            <span class="font-bold uppercase text-sm tracking-wide">Total Packed Oil Price:</span>
-                            <span class="text-xl font-bold">₹${summaryData.totalPackedOilPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </a>
-
-                    <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
-                        <div class="p-4 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center text-blue-700">
-                            <span class="font-bold uppercase text-sm tracking-wide">Total Credit Amount:</span>
-                            <span class="text-xl font-bold">₹${summaryData.totalCredit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </a>
-
-                    <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
-                        <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-lg flex justify-between items-center text-indigo-700">
-                            <span class="font-bold uppercase text-sm tracking-wide">Total Credit Return Amount:</span>
-                            <span class="text-xl font-bold">₹${summaryData.totalDebit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </a>
-                    <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
-                        <div class="p-4 bg-sky-50 border border-sky-100 rounded-lg flex justify-between items-center text-sky-700">
-                            <span class="font-bold uppercase text-sm tracking-wide">Total Credit Return Bank:</span>
-                            <span class="text-xl font-bold">₹${summaryData.totalDebitBank.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                        </div>
-                    </a>
+                    <span class="text-xl font-bold">₹${netTotalCashWithCoins.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </div>
+            </a>
 
-                <div class="mt-6 p-4 md:p-6 bg-green-600 rounded-lg text-white flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
-                    <span class="text-base md:text-lg font-bold text-center md:text-left">Grand Total Expected Revenue:</span>
-                    <span class="text-2xl md:text-4xl font-black tabular-nums">₹${totalRevenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+            <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
+                <div class="p-4 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center text-red-700">
+                    <span class="font-bold uppercase text-sm tracking-wide">Total Daily Expenses:</span>
+                    <span class="text-xl font-bold">- ₹${summaryData.totalExpenses.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                 </div>
-            
-                <div class="mt-4 p-4 md:p-6 bg-green-700 rounded-lg text-white flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
-                    <div class="flex flex-col text-center md:text-left">
-                        <span class="text-xs uppercase opacity-80 font-bold">Grand Total (Revenue - Expenses)</span>
-                        <span class="text-base md:text-lg font-bold">Net Expected Cash:</span>
-                    </div>
-                    <span class="text-2xl md:text-4xl font-black tabular-nums">₹${netFinalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                </div>`;
-            
-            wrapper.appendChild(summary);
-        }
+            </a>
 
-        function downloadFullPDF() {
-            const element = document.getElementById('fullReport');
-            const buttons = element.querySelectorAll('button');
-            buttons.forEach(btn => btn.style.display = 'none');
+            <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
+                <div class="p-4 bg-fuchsia-50 border border-fuchsia-100 rounded-lg flex justify-between items-center text-fuchsia-700">
+                    <span class="font-bold uppercase text-sm tracking-wide">Total Daily Expenses (Bank/Online):</span>
+                    <span class="text-xl font-bold">- ₹${summaryData.totalExpensesBank.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                </div>
+            </a>
 
-            const opt = {
-                margin:       [0.2, 0.2],
-                filename:     'Complete_Shift_Sales_Report.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true, 
-                    letterRendering: true,
-                    scrollX: 0,
-                    scrollY: 0
-                },
-                jsPDF: { unit: 'px', format: [2550, 1500], orientation: 'landscape' }
-            };
+            <a href="/packed-oil-history">
+                <div class="p-4 bg-yellow-50 border border-yellow-100 rounded-lg flex justify-between items-center text-yellow-800">
+                    <span class="font-bold uppercase text-sm tracking-wide">Total Packed Oil Price:</span>
+                    <span class="text-xl font-bold">₹${summaryData.totalPackedOilPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                </div>
+            </a>
 
-            html2pdf().set(opt).from(element).save().then(() => {
-                buttons.forEach(btn => btn.style.display = 'inline-block');
-            });
-        }
+            <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
+                <div class="p-4 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center text-blue-700">
+                    <span class="font-bold uppercase text-sm tracking-wide">Total Credit Amount:</span>
+                    <span class="text-xl font-bold">₹${summaryData.totalCredit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                </div>
+            </a>
 
-        function filterData() {
-            const fromDate = document.getElementById('fromDate').value;
-            const toDate = document.getElementById('toDate').value;
+            <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
+                <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-lg flex justify-between items-center text-indigo-700">
+                    <span class="font-bold uppercase text-sm tracking-wide">Total Credit Return Amount:</span>
+                    <span class="text-xl font-bold">₹${summaryData.totalDebit.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                </div>
+            </a>
+            <a href="/uygrbyeyeggbey5ebgy7fgvifview_transactions">
+                <div class="p-4 bg-sky-50 border border-sky-100 rounded-lg flex justify-between items-center text-sky-700">
+                    <span class="font-bold uppercase text-sm tracking-wide">Total Credit Return Bank:</span>
+                    <span class="text-xl font-bold">₹${summaryData.totalDebitBank.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                </div>
+            </a>
+        </div>
 
-            const filteredReadings = allReadings.filter(r => {
-                const readingDate = r.currentDate; 
-                if (fromDate && readingDate < fromDate) return false;
-                if (toDate && readingDate > toDate) return false;
-                return true;
-            });
+        <div class="mt-6 p-4 md:p-6 bg-green-600 rounded-lg text-white flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
+            <span class="text-base md:text-lg font-bold text-center md:text-left">Grand Total Expected Revenue:</span>
+            <span class="text-2xl md:text-4xl font-black tabular-nums">₹${totalRevenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+        </div>
+    
+        <div class="mt-4 p-4 md:p-6 bg-green-700 rounded-lg text-white flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
+            <div class="flex flex-col text-center md:text-left">
+                <span class="text-xs uppercase opacity-80 font-bold">Grand Total (Revenue - Expenses)</span>
+                <span class="text-base md:text-lg font-bold">Net Expected Cash:</span>
+            </div>
+            <span class="text-2xl md:text-4xl font-black tabular-nums">₹${netFinalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+        </div>`;
+    
+    wrapper.appendChild(summary);
+}
 
-            const filteredHistory = allHistory.filter(h => {
-                const historyDate = h.date; 
-                if (fromDate && historyDate < fromDate) return false;
-                if (toDate && historyDate > toDate) return false;
-                return true;
-            });
-            
-            displayLastSubmittedReadings(filteredReadings);
-            renderShiftWiseTables(filteredReadings);
-            renderMasterTable(filteredReadings);
-            renderInventoryHistory(filteredHistory);
-            
-            const noDataMessage = document.getElementById('noDataMessage');
-            if (filteredReadings.length === 0 && filteredHistory.length === 0) {
-                noDataMessage.classList.remove('hidden');
-            } else {
-                noDataMessage.classList.add('hidden');
-            }
-        }
+       function downloadFullPDF() {
+    const element = document.getElementById('fullReport');
+    
+    // Hide the buttons temporarily so they don't appear in the PDF
+    const buttons = element.querySelectorAll('button');
+    buttons.forEach(btn => btn.style.display = 'none');
+
+    const opt = {
+        margin:       [0.2, 0.2],
+        filename:     'Complete_Shift_Sales_Report.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { 
+            scale: 2, 
+            useCORS: true, 
+            letterRendering: true,
+            scrollX: 0,
+            scrollY: 0
+        },
+        jsPDF: { unit: 'px', format: [2550, 1500], orientation: 'landscape' }
+    };
+
+    // Generate PDF and then show buttons again
+    html2pdf().set(opt).from(element).save().then(() => {
+        buttons.forEach(btn => btn.style.display = 'inline-block');
+    });
+}
+
+       function filterData() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+
+    // 1. Filter Meter Readings (Existing logic)
+    const filteredReadings = allReadings.filter(r => {
+        const readingDate = r.currentDate; 
+        if (fromDate && readingDate < fromDate) return false;
+        if (toDate && readingDate > toDate) return false;
+        return true;
+    });
+
+    // 2. Filter Tank History (New logic)
+    const filteredHistory = allHistory.filter(h => {
+        const historyDate = h.date; // Adjust if your API property name is different
+        if (fromDate && historyDate < fromDate) return false;
+        if (toDate && historyDate > toDate) return false;
+        return true;
+    });
+    
+    // 3. Render Sales Data
+    displayLastSubmittedReadings(filteredReadings);
+    renderShiftWiseTables(filteredReadings);
+    renderMasterTable(filteredReadings);
+
+    // 4. Render History Reports (The function we created in the previous step)
+    renderInventoryHistory(filteredHistory);
+    
+    // Toggle the "No Data" message based on readings
+    const noDataMessage = document.getElementById('noDataMessage');
+    if (filteredReadings.length === 0 && filteredHistory.length === 0) {
+        noDataMessage.classList.remove('hidden');
+    } else {
+        noDataMessage.classList.add('hidden');
+    }
+}
 
         function resetFilter() {
-            document.getElementById('fromDate').value = '';
-            document.getElementById('toDate').value = '';
-            
-            displayLastSubmittedReadings(allReadings);
-            renderShiftWiseTables(allReadings);
-            renderInventoryHistory(allHistory); 
-            
-            document.getElementById('noDataMessage').classList.add('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+    // 1. Clear the date inputs
+    document.getElementById('fromDate').value = '';
+    document.getElementById('toDate').value = '';
+    
+    // 2. Re-render Meter Readings with the full global dataset
+    displayLastSubmittedReadings(allReadings);
+    renderShiftWiseTables(allReadings);
+    
+    // 3. Re-render Tank History with the full global dataset
+    // This ensures the "History Reports" table shows all records again
+    renderInventoryHistory(allHistory); 
+    
+    // 4. Hide the "No Data" message
+    document.getElementById('noDataMessage').classList.add('hidden');
+
+    // 5. Scroll to top (Optional, but helpful for long reports)
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
         window.onload = loadReadings;
     </script>
