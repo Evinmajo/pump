@@ -152,17 +152,36 @@ const readingSchema = new mongoose.Schema({
     firstReading1: { type: Number, default: 0 },
     firstReading2: { type: Number, default: 0 },
     firstReading3: { type: Number, default: 0 },
+    firstReading4: { type: Number, default: 0 },
+    firstReading5: { type: Number, default: 0 },
+    firstReading6: { type: Number, default: 0 },
     secondReading1: { type: Number, default: 0 },
     secondReading2: { type: Number, default: 0 },
     secondReading3: { type: Number, default: 0 },
+    secondReading4: { type: Number, default: 0 },
+    secondReading5: { type: Number, default: 0 },
+    secondReading6: { type: Number, default: 0 },
     dieselFirstReading1: { type: Number, default: 0 },
     dieselFirstReading2: { type: Number, default: 0 },
     dieselFirstReading3: { type: Number, default: 0 },
+    dieselFirstReading4: { type: Number, default: 0 },
+    dieselFirstReading5: { type: Number, default: 0 },
+    dieselFirstReading6: { type: Number, default: 0 },
     dieselSecondReading1: { type: Number, default: 0 },
     dieselSecondReading2: { type: Number, default: 0 },
     dieselSecondReading3: { type: Number, default: 0 },
+    dieselSecondReading4: { type: Number, default: 0 },
+    dieselSecondReading5: { type: Number, default: 0 },
+    dieselSecondReading6: { type: Number, default: 0 },
+    speedFirstReading1: { type: Number, default: 0 },  // Added
+    speedFirstReading2: { type: Number, default: 0 },  // Added
+    speedFirstReading3: { type: Number, default: 0 },  // Added
+    speedSecondReading1: { type: Number, default: 0 }, // Added
+    speedSecondReading2: { type: Number, default: 0 }, // Added
+    speedSecondReading3: { type: Number, default: 0 }, // Added
     petrolTestQuantity: { type: Number, default: 0 },
     dieselTestQuantity: { type: Number, default: 0 },
+    speedTestQuantity: { type: Number, default: 0 },
     batteryWater30: { type: Number, default: 0 },
     batteryWater60: { type: Number, default: 0 },
     batteryWater150: { type: Number, default: 0 },
