@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T.V.J. Petroleum - Sequential Bill Generator</title>
+    <script src="./style.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 
+                        billDark: '#1c1a1b',
+                        stampRed: '#a81c24'
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'Courier', 'monospace'],
+                        serifHeader: ['Times New Roman', 'Times', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [contenteditable="true"]:focus {
+            outline: 2px solid #3b82f6;
+            background-color: #eff6ff;
+            padding: 0 2px;
+        }
+        @media print {
+            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+            .no-print { display: none !important; }
+            .a4-page {
+                width: 210mm;
+                height: 297mm;
+                margin: 0 auto;
+                padding: 5mm;
+                box-sizing: border-box;
+                page-break-after: always;
+                background: white !important;
+                border: none !important;
+            }
+            [contenteditable="true"] { outline: none !important; }
+        }
+        .a4-page { 
+            width: 210mm; 
+            min-height: 297mm; 
+            background: white;
+            border: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-200 min-h-screen p-4 md:p-6 font-sans">
+
+    <div class="max-w-xl mx-auto bg-white rounded-xl shadow-md p-6 mb-8 no-print border-t-4 border-black">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">T.V.J. Petroleum Company</h1>
+        <p class="text-center text-[10px] text-gray-500 mb-6 uppercase tracking-widest font-bold">Kandassankadavu • Dynamic Pricing Sheet Engine</p>
+        
+        <div class="flex flex-col gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col">
+                    <label class="text-xs font-bold text-gray-600 mb-1">From Date:</label>
+                    <input type="date" id="fromDate" class="border rounded-md p-2 outline-none focus:ring-2 focus:ring-black">
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-xs font-bold text-gray-600 mb-1">To Date:</label>
+                    <input type="date" id="toDate" class="border rounded-md p-2 outline-none focus:ring-2 focus:ring-black">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col">
+                    <label class="text-xs font-bold text-gray-600 mb-1">Others Rate (Per Qty):</label>
+                    <input type="number" id="othersRateInput" step="0.01" min="0" value="0.00" class="border rounded-md p-2 outline-none focus:ring-2 focus:ring-black font-mono text-sm" placeholder="Enter rate...">
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-xs font-bold text-gray-600 mb-1">Starting Bill No:</label>
+                    <input type="number" id="startBillNoInput" min="1" value="1" class="border rounded-md p-2 outline-none focus:ring-2 focus:ring-black font-mono text-sm" placeholder="e.g. 10">
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="generateSplitBills()" class="flex-1 bg-gray-700 text-white font-bold py-3 rounded-md hover:bg-gray-800 transition">
+                    Generate Bills
+                </button>
+                <button id="masterPrintBtn" onclick="window.print()" class="hidden flex-1 bg-black text-white font-bold py-3 rounded-md hover:bg-gray-900 transition">
+                    Print All Sheets
+                </button>
+            </div>
+            <p class="text-[9px] text-blue-600 font-bold text-center italic">Tip: Values can be manually edited on screen directly before printing.</p>
+        </div>
+    </div>
+
+    <div id="printSheetsWrapper" class="flex flex-col gap-8 items-center justify-center"></div>
+
+    <script>
+        let allReadings = [];
+
+        async function init() {
+            const res = await fetch('/api/readings');
+            if (res.ok) allReadings = await res.json();
+        }
+
+        function generateSplitBills() {
+            const from = document.getElementById('fromDate').value;
+            const to = document.getElementById('toDate').value;
+            const userOthersRate = parseFloat(document.getElementById('othersRateInput').value) || 0;
+            const startBillNo = parseInt(document.getElementById('startBillNoInput').value) || 1;
+            
+            const wrapper = document.getElementById('printSheetsWrapper');
+            const printBtn = document.getElementById('masterPrintBtn');
+
+            if (!from || !to) return alert("Please select dates");
+
+            const rangeData = allReadings.filter(r => r.currentDate >= from && r.currentDate <= to);
+            const dailyMap = {};
+
+            // 1. Map & Aggregate Cumulative Daily Data
+            rangeData.forEach(r => {
+                const d = r.currentDate;
+                if (!dailyMap[d]) {
+                    dailyMap[d] = { 
+                        date: d, 
+                        pGross: 0, 
+                        dGross: 0, 
+                        pRate: r.petrol || 0, 
+                        dRate: r.diesel || 0,
+                        totalOthersQty: 0
+                    };
+                }
+
+                // Fuel Gross sales calculations (Second reading minus First Reading)
+                for(let i = 1; i <= 6; i++) {
+                    dailyMap[d].pGross += Math.max(0, (r[`secondReading${i}`] || 0) - (r[`firstReading${i}`] || 0));
+                    dailyMap[d].dGross += Math.max(0, (r[`dieselSecondReading${i}`] || 0) - (r[`dieselFirstReading${i}`] || 0));
+                }
+
+                // Deduct Test Quantities to transform from Gross Sold into Net Sold volume quantities
+                dailyMap[d].pGross = Math.max(0, dailyMap[d].pGross - (Number(r.petrolTestQuantity) || 0));
+                dailyMap[d].dGross = Math.max(0, dailyMap[d].dGross - (Number(r.dieselTestQuantity) || 0));
+
+                // REMOVED: Loose Oil Data Calculation is no longer processed here.
+
+                // Packed Oil Entries Data Calculation - Accumulating amount (quantity) strictly when category matches 'Oil'
+                const packedOilQty = (r.packedOilEntries || []).reduce((sum, po) => {
+                    if (po.category === 'Oil') {
+                        return sum + (Number(po.amount) || 0);
+                    }
+                    return sum;
+                }, 0);
+
+                // Add ONLY the packed oil quantity to the master pool quantity
+                dailyMap[d].totalOthersQty += packedOilQty;
+            });
+
+            const finalInvoices = [];
+            const MAX_CAPPING = 199000;
+
+            // 2. Loop Chronologically through daily structures and apply split rule
+            Object.keys(dailyMap).sort().forEach(dateKey => {
+                const day = dailyMap[dateKey];
+                
+                let remP = day.pGross;
+                let remD = day.dGross;
+                let remOQty = day.totalOthersQty;
+
+                while (remP > 0 || remD > 0 || remOQty > 0) {
+                    let bP = 0, bD = 0, bOQty = 0, currentTotal = 0;
+
+                    // Allocate Combined Others segment up to maximum threshold capping limit
+                    if (remOQty > 0) {
+                        const maxOAmountAvailable = MAX_CAPPING - currentTotal;
+                        
+                        // Calculate maximum allowable quantity based on the user-entered custom rate input configuration
+                        let allowedQtyByCap = remOQty;
+                        if (userOthersRate > 0) {
+                            allowedQtyByCap = maxOAmountAvailable / userOthersRate;
+                        }
+
+                        bOQty = Math.min(remOQty, allowedQtyByCap);
+                        currentTotal += (bOQty * userOthersRate);
+                        remOQty -= bOQty;
+                    }
+
+                    // Feed Petrol into remaining capacity bracket
+                    if (currentTotal < MAX_CAPPING && remP > 0) {
+                        const maxPValue = MAX_CAPPING - currentTotal;
+                        bP = Math.min(remP, maxPValue / day.pRate);
+                        currentTotal += bP * day.pRate;
+                        remP -= bP;
+                    }
+
+                    // Feed Diesel into remaining capacity bracket
+                    if (currentTotal < MAX_CAPPING && remD > 0) {
+                        const maxDValue = MAX_CAPPING - currentTotal;
+                        bD = Math.min(remD, maxDValue / day.dRate);
+                        currentTotal += bD * day.dRate;
+                        remD -= bD;
+                    }
+
+                    finalInvoices.push({ 
+                        ...day, 
+                        bP, 
+                        bD, 
+                        bOQty, 
+                        bOAmount: bOQty * userOthersRate, 
+                        total: currentTotal 
+                    });
+                }
+            });
+
+            wrapper.innerHTML = '';
+            if (!finalInvoices.length) { printBtn.classList.add('hidden'); return; }
+            printBtn.classList.remove('hidden');
+
+            // Initialize global numbering using user-entered box setting override parameter
+            let globalBillNo = startBillNo;
+
+            // 3. Document Matrix Layout Construction (10 components per printed sheet block)
+            for (let i = 0; i < finalInvoices.length; i += 10) {
+                const chunk = finalInvoices.slice(i, i + 10);
+                const page = document.createElement('div');
+                page.className = "a4-page shadow-2xl grid grid-cols-2 grid-rows-5 gap-2 p-2 mb-10";
+                
+                chunk.forEach(inv => {
+                    page.insertAdjacentHTML('beforeend', `
+                        <div class="bg-white text-billDark p-2 flex flex-col justify-between border border-gray-300 text-[9px] h-full leading-tight relative">
+                            <div>
+                                <div class="flex justify-between text-[7px] font-bold mb-1">
+                                    <span>GST: 32ASMPM8868J1ZO</span>
+                                    <span class="pr-2">CASH BILL</span>
+                                    <span>Ph:</span>
+                                </div>
+                                <div class="text-center border-b border-black pb-1 mb-1">
+                                    <h1 class="text-[10px] font-serifHeader font-black uppercase tracking-tight">T.V.J. PETROLEUM COMPANY</h1>
+                                    <p class="text-[7px] font-bold">INDIAN OIL DEALER</p>
+                                    <p class="text-[6px] uppercase">KANDASSANKADAVU, THRISSUR-680613</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 font-bold text-[8px] mb-1">
+                                    <div class="flex items-end">
+                                        No. <span class="text-stampRed text-lg ml-1 font-serifHeader" contenteditable="true">${globalBillNo++}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        Date: <span class="border-b border-dotted border-black px-1" contenteditable="true">${inv.date}</span>
+                                    </div>
+                                </div>
+                                <div class="mb-1 text-[8px] font-bold">
+                                    To: <span contenteditable="true" class="border-b border-dotted border-black min-w-[100px] inline-block">.................................................................</span>
+                                </div>
+                                <table class="w-full text-[8px] border-t border-b border-black border-collapse">
+                                    <tr class="border-b border-black font-bold uppercase text-[7px]">
+                                        <th class="text-left py-0.5 px-1 border-r border-black">Particulars</th>
+                                        <th class="text-right py-0.5 px-1 border-r border-black">Qty Sold</th>
+                                        <th class="text-right py-0.5 px-1">Total Price</th>
+                                    </tr>
+                                    <tr class="border-b border-black/10">
+                                        <td class="px-1 border-r border-black">Petrol</td>
+                                        <td class="text-right font-mono px-1 border-r border-black" contenteditable="true">${inv.bP.toFixed(2)}</td>
+                                        <td class="text-right font-mono px-1" contenteditable="true">₹${(inv.bP*inv.pRate).toFixed(2)}</td>
+                                    </tr>
+                                    <tr class="border-b border-black/10">
+                                        <td class="px-1 border-r border-black">Diesel</td>
+                                        <td class="text-right font-mono px-1 border-r border-black" contenteditable="true">${inv.bD.toFixed(2)}</td>
+                                        <td class="text-right font-mono px-1" contenteditable="true">₹${(inv.bD*inv.dRate).toFixed(2)}</td>
+                                    </tr>
+                                    <tr class="border-b border-black/10">
+                                        <td class="px-1 border-r border-black">Others</td>
+                                        <td class="text-right font-mono px-1 border-r border-black" contenteditable="true">
+                                            ${inv.bOQty > 0 ? inv.bOQty.toFixed(2) : '---'}
+                                        </td>
+                                        <td class="text-right font-mono px-1" contenteditable="true">
+                                            ${inv.bOQty > 0 ? '₹' + inv.bOAmount.toFixed(2) : '---'}
+                                        </td>
+                                    </tr>
+                                    <tr class="font-bold bg-gray-50">
+                                        <td colspan="2" class="text-right py-0.5 pr-2 border-r border-black uppercase text-[7px]">Total Amount:</td>
+                                        <td class="text-right font-mono px-1" contenteditable="true">₹${inv.total.toFixed(2)}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="flex justify-between items-center text-[6px] font-bold mt-1 uppercase">
+                                <span class="text-gray-400 italic">E.& O.E.</span>
+                                <span>For T.V.J. Petroleum Co.</span>
+                            </div>
+                        </div>
+                    `);
+                });
+                wrapper.appendChild(page);
+            }
+        }
+        window.onload = init;
+    </script>
+</body>
+</html>

@@ -3,26 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Packed Oil Sales History</title>
+    <title>Sales History Lookup</title>
     <script src="./style.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4">
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Packed Oil Sales History</h1>
+    <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Item Sales History Lookup</h1>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Category Filter</label>
+                <select id="categoryFilter" class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white text-gray-700 font-medium focus:ring-blue-500 focus:border-blue-500">
+                    <option value="All">All Types</option>
+                    <option value="Oil">Oil</option>
+                    <option value="Battery Water">Battery Water</option>
+                    <option value="Gas">Gas</option>
+                </select>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">From Date</label>
-                <input type="date" id="fromDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                <input type="date" id="fromDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-gray-700">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">To Date</label>
-                <input type="date" id="toDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                <input type="date" id="toDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 text-gray-700">
             </div>
             <div class="flex items-end">
-                <button onclick="fetchHistory()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition">
+                <button onclick="fetchHistory()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 shadow-sm">
                     Search History
                 </button>
             </div>
@@ -32,45 +41,58 @@
             <table class="min-w-full table-auto border-collapse">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 border-b text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
-                        <th class="px-4 py-3 border-b text-left text-xs font-semibold text-gray-600 uppercase">Oil Type</th>
-                        <th class="px-4 py-3 border-b text-center text-xs font-semibold text-gray-600 uppercase">Qty Sold</th>
-                        <th class="px-4 py-3 border-b text-center text-xs font-semibold text-gray-600 uppercase">Total Price</th>
-                        <th class="px-4 py-3 border-b text-left text-xs font-semibold text-gray-600 uppercase">Staff</th>
+                        <th class="px-4 py-3 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                        <th id="dynamicHeaderName" class="px-4 py-3 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Item Type</th>
+                        <th class="px-4 py-3 border-b text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Qty Sold</th>
+                        <th class="px-4 py-3 border-b text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Price</th>
+                        <th class="px-4 py-3 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Staff</th>
                     </tr>
                 </thead>
                 <tbody id="historyTableBody" class="divide-y divide-gray-200">
-                    </tbody>
+                </tbody>
                 <tfoot id="historyTableFoot" class="bg-gray-100 font-bold hidden">
                     <tr>
                         <td colspan="2" class="px-4 py-3 text-right text-sm text-gray-700 uppercase">Grand Total:</td>
                         <td id="totalQty" class="px-4 py-3 text-center text-sm text-gray-900">0</td>
-                        <td id="totalPrice" class="px-4 py-3 text-center text-sm text-gray-900">₹0</td>
-                        <td></td> </tr>
+                        <td id="totalPrice" class="px-4 py-3 text-center text-sm text-gray-900">₹0.00</td>
+                        <td></td> 
+                    </tr>
                 </tfoot>    
             </table>
         </div>
-        <div id="noDataMessage" class="hidden text-center py-10 text-gray-500">No sales records found for this period.</div>
+        <div id="noDataMessage" class="hidden text-center py-10 text-gray-500">No sales records found for this selection.</div>
     </div>
 
     <script>
         async function fetchHistory() {
+            const category = document.getElementById('categoryFilter').value;
             const fromDate = document.getElementById('fromDate').value;
             const toDate = document.getElementById('toDate').value;
+            
             const tbody = document.getElementById('historyTableBody');
             const tfoot = document.getElementById('historyTableFoot');
             const noData = document.getElementById('noDataMessage');
+            const dynamicHeader = document.getElementById('dynamicHeaderName');
+
+            // Dynamically change table header label depending on dropdown context
+            if (category === 'All') {
+                dynamicHeader.innerText = 'Item Type';
+            } else {
+                dynamicHeader.innerText = `${category} Type`;
+            }
 
             try {
-                const response = await fetch(`/api/transactions/packedOil?fromDate=${fromDate}&toDate=${toDate}`);
+                // Pass category parameters safely via URL query string
+                const response = await fetch(`/api/transactions/packedOil?fromDate=${fromDate}&toDate=${toDate}&category=${encodeURIComponent(category)}`);
                 const data = await response.json();
 
                 tbody.innerHTML = '';
-                if (data.length === 0) {
+                if (!data || data.length === 0) {
                     noData.classList.remove('hidden');
                     tfoot.classList.add('hidden');
                     return;
                 }
+                
                 noData.classList.add('hidden');
                 tfoot.classList.remove('hidden');
                 let grandTotalQty = 0;
@@ -78,23 +100,25 @@
 
                 data.forEach(item => {
                     grandTotalQty += Number(item.quantity) || 0;
-            grandTotalPrice += Number(item.price) || 0;
+                    grandTotalPrice += Number(item.price) || 0; 
+                    
                     const row = `
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700">${item.date}</td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">${item.name}</td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-700">${item.quantity}</td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-700">₹${item.price}</td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-700">₹${Number(item.price).toFixed(2)}</td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">${item.staffName}</td>
                         </tr>
                     `;
                     tbody.innerHTML += row;
                 });
+                
                 document.getElementById('totalQty').innerText = grandTotalQty;
-        document.getElementById('totalPrice').innerText = `₹${grandTotalPrice.toLocaleString()}`;
+                document.getElementById('totalPrice').innerText = `₹${grandTotalPrice.toFixed(2)}`;
             } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to load history.');
+                console.error('Error fetching data:', error);
+                alert('Failed to load transaction logs.');
             }
         }
 

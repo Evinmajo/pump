@@ -63,6 +63,9 @@ app.get('/packed-oil-history', (req, res) => {
 app.get('/excess-shot-report', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'excess_shot.html'));
 });
+app.get('/bill', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'bill_generator.html'));
+});
 // Serve static files from the 'public' directory
 // This middleware will now only handle requests that haven't been caught by the routes above
 app.use(express.static(path.join(__dirname, 'public')));
@@ -164,7 +167,7 @@ const readingSchema = new mongoose.Schema({
     batteryWater60: { type: Number, default: 0 },
     batteryWater150: { type: Number, default: 0 },
     acidWater: { type: Number, default: 0 },
-   packedOilEntries: [{ name: String, amount: Number, price: Number}],
+    packedOilEntries: [{ category: String, name: String, amount: Number, price: Number }],
     creditEntries: [{ name: String, amount: Number }],
     debitEntries: [{ name: String, amount: Number }],
     note500: { type: Number, default: 0 },
@@ -316,6 +319,22 @@ app.get('/api/oilStock/history', async (req, res) => {
         res.status(200).json(history);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching history', error: error.message });
+    }
+});
+// DELETE: Remove a specific daily snapshot record from history
+app.delete('/api/oilStock/history/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedHistory = await OilStockHistory.findByIdAndDelete(id);
+
+        if (!deletedHistory) {
+            return res.status(404).json({ message: 'History record not found' });
+        }
+
+        res.status(200).json({ message: 'History snapshot deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting oil stock history:', error);
+        res.status(500).json({ message: 'Error deleting history record', error: error.message });
     }
 });
 
@@ -485,18 +504,19 @@ app.get('/api/reports/daily-excess-shot', async (req, res) => {
 
 app.get('/api/transactions/packedOil', async (req, res) => {
     try {
-        const { fromDate, toDate, oilType } = req.query;
+        const { fromDate, toDate, category } = req.query;
         let query = {};
 
         if (fromDate && toDate) {
             query.currentDate = { $gte: fromDate, $lte: toDate };
         }
-         const allStaff = await Staff.find({});
+
+        const allStaff = await Staff.find({});
         const staffMap = {};
         allStaff.forEach(s => {
             staffMap[s.staffId] = s.name;
         });
-        // Fetch readings and only the necessary fields
+
         const readings = await Reading.find(query).select('currentDate packedOilEntries selectedId');
 
         let history = [];
@@ -504,22 +524,29 @@ app.get('/api/transactions/packedOil', async (req, res) => {
         readings.forEach(reading => {
             if (reading.packedOilEntries && reading.packedOilEntries.length > 0) {
                 reading.packedOilEntries.forEach(entry => {
-                    // Filter by oil type if requested
-                    if (!oilType || oilType === 'All' || entry.name === oilType) {
-                        history.push({
-                            date: reading.currentDate,
-                            staffName: staffMap[reading.selectedId] || reading.selectedId,
-                            name: entry.name,
-                            quantity: entry.amount,
-                            price: entry.price,
-                            total: (entry.amount * entry.price).toFixed(2)
-                        });
+                    
+                    // IF category is provided AND it is not 'All', filter strictly.
+                    // This allows legacy records (where entry.category doesn't exist) to show up under 'All'
+                    if (category && category !== 'All' && entry.category !== category) {
+                        return; 
                     }
+
+                    // Compute dynamic row total: amount (Qty) * price (Rate)
+                    const rowTotalPrice = (Number(entry.amount) || 0) * (Number(entry.price) || 0);
+
+                    history.push({
+                        date: reading.currentDate,
+                        staffName: staffMap[reading.selectedId] || reading.selectedId,
+                        category: entry.category || 'Oil', // Default fallback for display structure
+                        name: entry.name,
+                        quantity: entry.amount, // Maps perfectly to item.quantity in your HTML script loop
+                        price: rowTotalPrice    // Maps perfectly to item.price in your HTML script loop
+                    });
                 });
             }
         });
 
-        // Sort by date descending
+        // Sort by date descending (Newest transactions first)
         history.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         res.status(200).json(history);

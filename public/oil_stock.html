@@ -26,8 +26,14 @@
         /* History Log UI Styles */
         .history-timeline { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); margin-top: 1rem; }
         .history-item-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; }
-        .history-date-header { font-weight: 700; font-size: 0.95rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.4rem; margin-bottom: 0.6rem; color: #334155; display: flex; justify-content: space-between; }
+        .history-date-header { font-weight: 700; font-size: 0.95rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.4rem; margin-bottom: 0.6rem; color: #334155; display: flex; justify-content: space-between; align-items: center; }
+        .history-header-right { display: flex; align-items: center; gap: 8px; }
         .history-timestamp { font-size: 0.75rem; color: #94a3b8; font-weight: normal; }
+        
+        /* History Delete Action Button */
+        .history-del-btn { background: transparent; color: #94a3b8; font-size: 0.8rem; border: none; padding: 2px 6px; cursor: pointer; border-radius: 4px; line-height: 1; transition: all 0.2s; }
+        .history-del-btn:hover { background: #fee2e2; color: var(--d); }
+        
         .history-row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.2rem 0; color: #475569; }
         .history-row span { font-weight: 600; color: var(--p); }
     </style>
@@ -98,7 +104,10 @@
                         <div class="history-item-card">
                             <div class="history-date-header">
                                 <span>📅 ${snapshot.date}</span>
-                                <span class="history-timestamp">${localTime}</span>
+                                <div class="history-header-right">
+                                    <span class="history-timestamp">${localTime}</span>
+                                    <button class="history-del-btn" onclick="deleteHistory('${snapshot._id}')" title="Delete Log">✕</button>
+                                </div>
                             </div>
                     `;
 
@@ -121,6 +130,19 @@
 
             } catch (e) {
                 histDisp.innerHTML = '<p style="color:var(--d); font-size:0.9rem;">Failed to fetch history items.</p>';
+            }
+        }
+
+        // Function to handle backend elimination of a single snapshot log 
+        async function deleteHistory(id) {
+            if (!confirm('Are you sure you want to permanently delete this daily history snapshot?')) return;
+            try {
+                const r = await fetch(`/api/oilStock/history/${id}`, { method: 'DELETE' });
+                if (!r.ok) throw r;
+                showMsg('History entry deleted', 's');
+                loadHistory();
+            } catch (e) {
+                showMsg('Failed to delete history', 'e');
             }
         }
 
