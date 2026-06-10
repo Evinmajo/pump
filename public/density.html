@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Density & Volume Logger</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[readonly] {
+            background-color: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+            font-weight: bold;
+        }
+        .section-box {
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 6px;
+            background-color: #fff;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .section-box h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #007bff;
+            color: #007bff;
+        }
+        .fuel-row {
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+        }
+        .petrol-border { border-left: 5px solid #ffcc00; }
+        .diesel-border { border-left: 5px solid #4caf50; }
+        .fuel-row h4 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #444;
+        }
+        .grid-2 {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+        .grid-2 .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-density { background-color: #007bff; }
+        .btn-density:hover { background-color: #0056b3; }
+        .btn-volume { background-color: #6c757d; }
+        .btn-volume:hover { background-color: #5a6268; }
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Daily Fuel Tracker</h2>
+    
+    <div class="form-group">
+        <label for="sharedDate">Select Operations Date</label>
+        <input type="date" id="sharedDate" required>
+    </div>
+
+    <form id="densityForm" class="section-box">
+        <h3>1. Daily Density & Temperature Logs</h3>
+        
+        <div class="fuel-row petrol-border">
+            <h4>Petrol (MS)</h4>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="petrolDensity">Density (kg/m³)</label>
+                    <input type="number" id="petrolDensity" step="0.1" placeholder="e.g. 745.2" required>
+                </div>
+                <div class="form-group">
+                    <label for="petrolTemp">Temp (°C)</label>
+                    <input type="number" id="petrolTemp" step="0.1" placeholder="e.g. 29.5" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="petrolDensity15">Calculated Density @ 15°C</label>
+                <input type="number" id="petrolDensity15" step="0.1" placeholder="Auto-calculates..." readonly>
+            </div>
+        </div>
+
+        <div class="fuel-row diesel-border">
+            <h4>Diesel (HSD)</h4>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="dieselDensity">Density (kg/m³)</label>
+                    <input type="number" id="dieselDensity" step="0.1" placeholder="e.g. 832.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="dieselTemp">Temp (°C)</label>
+                    <input type="number" id="dieselTemp" step="0.1" placeholder="e.g. 30.1" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="dieselDensity15">Calculated Density @ 15°C</label>
+                <input type="number" id="dieselDensity15" step="0.1" placeholder="Auto-calculates..." readonly>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-density">Save Density Readings</button>
+        <div id="densityMsg" class="message"></div>
+    </form>
+
+
+    <form id="volumeForm" class="section-box">
+        <h3>2. Fuel Height & Inventory Volume Logs</h3>
+        
+        <div class="fuel-row petrol-border">
+            <h4>Petrol (MS) Inventory</h4>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="petrolHeight">Fuel Height (cm)</label>
+                    <input type="number" id="petrolHeight" step="0.01" placeholder="e.g. 142.50" required>
+                </div>
+                <div class="form-group">
+                    <label for="petrolVolume">Net Volume (Ltrs)</label>
+                    <input type="number" id="petrolVolume" step="0.1" placeholder="e.g. 12450.0" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="fuel-row diesel-border">
+            <h4>Diesel (HSD) Inventory</h4>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="dieselHeight">Fuel Height (cm)</label>
+                    <input type="number" id="dieselHeight" step="0.01" placeholder="e.g. 185.20" required>
+                </div>
+                <div class="form-group">
+                    <label for="dieselVolume">Net Volume (Ltrs)</label>
+                    <input type="number" id="dieselVolume" step="0.1" placeholder="e.g. 18400.0" required>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-volume">Save Height & Volume Readings</button>
+        <div id="volumeMsg" class="message"></div>
+    </form>
+</div>
+
+<script>
+    // Automatically set the date field to today in Indian Standard Time (IST)
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    document.getElementById('sharedDate').value = todayStr;
+
+    // Form elements
+    const densityForm = document.getElementById('densityForm');
+    const volumeForm = document.getElementById('volumeForm');
+
+    // Input references for density tracking
+    const petrolDensityInput = document.getElementById('petrolDensity');
+    const petrolTempInput = document.getElementById('petrolTemp');
+    const petrolDensity15Input = document.getElementById('petrolDensity15');
+
+    const dieselDensityInput = document.getElementById('dieselDensity');
+    const dieselTempInput = document.getElementById('dieselTemp');
+    const dieselDensity15Input = document.getElementById('dieselDensity15');
+
+    // Constants for expansion coefficients
+    const ALPHA_PETROL = 0.0012;
+    const ALPHA_DIESEL = 0.00085;
+
+    // Math calculation helper for density adjustment at 15°C
+    function calculateDensityAt15(density, temp, alpha) {
+        if (!density || !temp) return '';
+        const density15 = density / (1 - alpha * (temp - 15));
+        return density15.toFixed(1);
+    }
+
+    // Real-time calculation listeners for Petrol
+    [petrolDensityInput, petrolTempInput].forEach(input => {
+        input.addEventListener('input', () => {
+            const d = parseFloat(petrolDensityInput.value);
+            const t = parseFloat(petrolTempInput.value);
+            petrolDensity15Input.value = calculateDensityAt15(d, t, ALPHA_PETROL);
+        });
+    });
+
+    // Real-time calculation listeners for Diesel
+    [dieselDensityInput, dieselTempInput].forEach(input => {
+        input.addEventListener('input', () => {
+            const d = parseFloat(dieselDensityInput.value);
+            const t = parseFloat(dieselTempInput.value);
+            dieselDensity15Input.value = calculateDensityAt15(d, t, ALPHA_DIESEL);
+        });
+    });
+
+    // SUBMIT HANDLER 1: Save Density Data Schema Group
+    densityForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            date: document.getElementById('sharedDate').value,
+            petrolDensity: parseFloat(petrolDensityInput.value),
+            petrolTemp: parseFloat(petrolTempInput.value),
+            petrolDensity15: parseFloat(petrolDensity15Input.value),
+            dieselDensity: parseFloat(dieselDensityInput.value),
+            dieselTemp: parseFloat(dieselTempInput.value),
+            dieselDensity15: parseFloat(dieselDensity15Input.value)
+        };
+
+        try {
+            const response = await fetch('/api/density', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage('densityMsg', 'Density logs saved successfully into standard schema!', 'success');
+                densityForm.reset();
+            } else {
+                showMessage('densityMsg', 'Error: ' + result.message, 'error');
+            }
+        } catch (err) {
+            showMessage('densityMsg', 'Network error connection failed.', 'error');
+            console.error(err);
+        }
+    });
+
+    // SUBMIT HANDLER 2: Save Height & Volume Data Schema Group
+    volumeForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const payload = {
+            date: document.getElementById('sharedDate').value,
+            petrolHeight: parseFloat(document.getElementById('petrolHeight').value),
+            petrolVolume: Math.round(parseFloat(document.getElementById('petrolVolume').value)),
+            dieselHeight: parseFloat(document.getElementById('dieselHeight').value),
+           dieselVolume: Math.round(parseFloat(document.getElementById('dieselVolume').value))
+        };
+
+        try {
+            const response = await fetch('/api/fuel-volume', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage('volumeMsg', 'Height & Volume entries stored successfully into separate collection!', 'success');
+                volumeForm.reset();
+            } else {
+                showMessage('volumeMsg', 'Error: ' + result.message, 'error');
+            }
+        } catch (err) {
+            showMessage('volumeMsg', 'Network interface connection failed.', 'error');
+            console.error(err);
+        }
+    });
+
+    // Output UI alert box management helper
+    function showMessage(targetBoxId, text, type) {
+        const msgBox = document.getElementById(targetBoxId);
+        msgBox.textContent = text;
+        msgBox.className = `message ${type}`;
+        msgBox.style.display = 'block';
+        
+        setTimeout(() => {
+            msgBox.style.display = 'none';
+        }, 4000);
+    }
+</script>
+</body>
+</html>
