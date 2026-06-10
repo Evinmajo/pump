@@ -66,6 +66,9 @@ app.get('/excess-shot-report', (req, res) => {
 app.get('/bill', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'bill_generator.html'));
 });
+app.get('/density', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'density.html'));
+});
 // Serve static files from the 'public' directory
 // This middleware will now only handle requests that haven't been caught by the routes above
 app.use(express.static(path.join(__dirname, 'public')));
@@ -112,6 +115,39 @@ userSchema.pre('save', async function(next) {
 });
 
 const User = mongoose.model('User', userSchema);
+
+// NEW: Schema for Daily Density and Temperature Tracking
+const densitySchema = new mongoose.Schema({
+    date: { 
+        type: String, 
+        required: true, 
+        unique: true // Prevents duplicate entries for the same day
+    },
+    petrolDensity: { type: Number, required: true },
+    petrolTemp: { type: Number, required: true },
+    petrolDensity15: { type: Number, required: true }, // Added field
+    dieselDensity: { type: Number, required: true },
+    dieselTemp: { type: Number, required: true },
+    dieselDensity15: { type: Number, required: true }, // Added field
+    timestamp: { type: Date, default: Date.now }
+});
+
+const DensityLog = mongoose.model('DensityLog', densitySchema);
+
+const fuelVolumeSchema = new mongoose.Schema({
+    date: {
+        type: String,
+        required: true,
+        unique: true // Prevents duplicate entries for the same day
+    },
+    petrolHeight: { type: Number, required: true },
+    petrolVolume: { type: Number, required: true },
+    dieselHeight: { type: Number, required: true },
+    dieselVolume: { type: Number, required: true },
+    timestamp: { type: Date, default: Date.now }
+});
+
+const FuelVolumeLog = mongoose.model('FuelVolumeLog', fuelVolumeSchema);
 
 // NEW: Schema for Staff (separate from User for login)
 const staffSchema = new mongoose.Schema({
@@ -319,6 +355,63 @@ priceSchema.statics.getPrices = async function() {
 };
 
 const Price = mongoose.model('Price', priceSchema);
+
+// POST: Save or Update daily density readings
+// POST: Save or Update daily density readings (including 15°C calculations)
+app.post('/api/density', async (req, res) => {
+    try {
+        const { date, petrolDensity, petrolTemp, petrolDensity15, dieselDensity, dieselTemp, dieselDensity15 } = req.body;
+
+        const updatedDensityLog = await DensityLog.findOneAndUpdate(
+            { date: date },
+            { petrolDensity, petrolTemp, petrolDensity15, dieselDensity, dieselTemp, dieselDensity15, timestamp: new Date() },
+            { new: true, upsert: true, runValidators: true }
+        );
+
+        res.status(200).json({ success: true, message: 'Density data saved successfully!', data: updatedDensityLog });
+    } catch (error) {
+        console.error('Error saving density log:', error);
+        res.status(500).json({ message: 'Failed to save density records', error: error.message });
+    }
+});
+app.post('/api/fuel-volume', async (req, res) => {
+    try {
+        const { date, petrolHeight, petrolVolume, dieselHeight, dieselVolume } = req.body;
+
+        const updatedVolumeLog = await FuelVolumeLog.findOneAndUpdate(
+            { date: date },
+            { petrolHeight, petrolVolume, dieselHeight, dieselVolume, timestamp: new Date() },
+            { new: true, upsert: true, runValidators: true }
+        );
+
+        res.status(200).json({ success: true, message: 'Fuel Height & Volume data saved successfully!', data: updatedVolumeLog });
+    } catch (error) {
+        console.error('Error saving fuel volume log:', error);
+        res.status(500).json({ message: 'Failed to save height & volume records', error: error.message });
+    }
+});
+
+// GET: Fetch all density logs (useful for historical views)
+app.get('/api/density', async (req, res) => {
+    try {
+        const logs = await DensityLog.find({}).sort({ date: -1 });
+        res.status(200).json(logs);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching density logs', error: error.message });
+    }
+});
+
+// ==============================================================
+// ADD THIS MISSING ROUTE DIRECTLY BELOW IT IN YOUR server.js FILE
+// ==============================================================
+app.get('/api/fuel-volume', async (req, res) => {
+    try {
+        const logs = await FuelVolumeLog.find({}).sort({ date: -1 });
+        res.status(200).json(logs);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching fuel volume logs', error: error.message });
+    }
+});
 
 
 // --- API Endpoints for User Authentication ---
