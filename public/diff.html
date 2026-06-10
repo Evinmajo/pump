@@ -45,6 +45,24 @@
     <span>📥</span> Save as PDF
     </button>
 </div>
+<div id="densityVolumeContainer" class="mb-6 p-4 bg-white border-2 border-emerald-100 rounded-xl shadow-sm hidden">
+    <div class="flex justify-between items-center mb-4 border-b pb-2">
+        <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <span class="p-1 bg-emerald-100 rounded text-emerald-600">📊</span> 
+            Daily Density & Tank Stock Inventory Logs
+        </h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-3 bg-amber-50/40 border border-amber-100 rounded-lg">
+            <h3 class="text-xs font-bold text-amber-700 uppercase mb-2">🌡️ Density & Temperature (kg/m³)</h3>
+            <div id="densityLogsDisplay" class="text-xs space-y-2 divide-y divide-dashed divide-amber-200"></div>
+        </div>
+        <div class="p-3 bg-sky-50/40 border border-sky-100 rounded-lg">
+            <h3 class="text-xs font-bold text-sky-700 uppercase mb-2">📐 Tank Heights & Volumes (Liters)</h3>
+            <div id="volumeLogsDisplay" class="text-xs space-y-2 divide-y divide-dashed divide-sky-200"></div>
+        </div>
+    </div>
+</div>
 <div id="latestReadingsContainer" class="mb-6 p-4 bg-white border-2 border-blue-100 rounded-xl shadow-sm">
     <div class="flex justify-between items-center mb-4 border-b pb-2">
         <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -144,25 +162,129 @@
         let allReadings = [];
         let allHistory = [];
         let staffMap = {};
+        let allDensityLogs = [];
+        let allVolumeLogs = [];
+        
+function renderDensityAndVolume() {
+    const container = document.getElementById('densityVolumeContainer');
+    const densityDisplay = document.getElementById('densityLogsDisplay');
+    const volumeDisplay = document.getElementById('volumeLogsDisplay');
+    
+    if (!container || !densityDisplay || !volumeDisplay) return;
 
-        async function loadReadings() {
-            try {
-                const staffResponse = await fetch('/api/staff');
-                const staffData = await staffResponse.json();
-                staffData.forEach(s => { staffMap[s.staffId] = s.name; });
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
 
-                const response = await fetch('/api/readings');
-                allReadings = await response.json();
-                const historyRes = await fetch('/api/tanks/history');
-                allHistory = await historyRes.json();
-                renderMasterTable(allReadings);
-                displayLastSubmittedReadings(allReadings);
-                renderShiftWiseTables(allReadings);
-                renderInventoryHistory(allHistory);
-            } catch (error) {
-                console.error('Fetch error:', error);
+    // 1. Process Date Filtering cleanly
+    let filteredDensity = allDensityLogs || [];
+    if (fromDate || toDate) {
+        filteredDensity = allDensityLogs.filter(d => {
+            if (!d.date) return false;
+            const logDate = d.date.substring(0, 10); 
+            if (fromDate && logDate < fromDate) return false;
+            if (toDate && logDate > toDate) return false;
+            return true;
+        });
+    }
+
+    let filteredVolume = allVolumeLogs || [];
+    if (fromDate || toDate) {
+        filteredVolume = allVolumeLogs.filter(v => {
+            if (!v.date) return false;
+            const logDate = v.date.substring(0, 10);
+            if (fromDate && logDate < fromDate) return false;
+            if (toDate && logDate > toDate) return false;
+            return true;
+        });
+    }
+
+    // 2. Build Density Items dynamically (Including 15°C variables)
+    if (filteredDensity.length === 0) {
+        densityDisplay.innerHTML = '<p class="text-gray-400 py-1 italic">No records found for the selected dates.</p>';
+    } else {
+        densityDisplay.innerHTML = filteredDensity.map(d => {
+            const formattedDate = d.date ? d.date.substring(0, 10) : '';
+            return `
+                <div class="pt-2 first:pt-0 font-medium">
+                    <span class="bg-amber-200 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono mr-1">${formattedDate}</span>
+                    <span class="text-amber-800">Petrol:</span> <strong>${d.petrolDensity || '-'}</strong> kg/m³ @ <strong>${d.petrolTemp || '-'}</strong>°C <span class="text-xs text-gray-500">(15°C: <strong>${d.petrolDensity15 || '-'}</strong>)</span> | 
+                    <span class="text-emerald-800 ml-1">Diesel:</span> <strong>${d.dieselDensity || '-'}</strong> kg/m³ @ <strong>${d.dieselTemp || '-'}</strong>°C <span class="text-xs text-gray-500">(15°C: <strong>${d.dieselDensity15 || '-'}</strong>)</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 3. Build Volume Items dynamically (FIXED: Uses Math.round to fix floating point 3999.8 mismatches!)
+    if (filteredVolume.length === 0) {
+        volumeDisplay.innerHTML = '<p class="text-gray-400 py-1 italic">No records found for the selected dates.</p>';
+    } else {
+        volumeDisplay.innerHTML = filteredVolume.map(v => {
+            const formattedDate = v.date ? v.date.substring(0, 10) : '';
+            
+            // Format volume variables cleanly to wipe out trailing decimal artifacts
+            const pVol = v.petrolVolume != null ? Math.round(v.petrolVolume) : '0';
+            const dVol = v.dieselVolume != null ? Math.round(v.dieselVolume) : '0';
+            const pHeight = v.petrolHeight != null ? v.petrolHeight : '0';
+            const dHeight = v.dieselHeight != null ? v.dieselHeight : '0';
+
+            return `
+                <div class="pt-2 first:pt-0 font-medium">
+                    <span class="bg-sky-200 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono mr-1">${formattedDate}</span>
+                    <span class="text-orange-700">Petrol Tank:</span> H: <strong>${pHeight}</strong>cm → <strong>${pVol}</strong>L | 
+                    <span class="text-indigo-700 ml-1">Diesel Tank:</span> H: <strong>${dHeight}</strong>cm → <strong>${dVol}</strong>L
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 4. Show container layout
+    container.classList.remove('hidden');
+}
+
+async function loadReadings() {
+    try {
+        const staffResponse = await fetch('/api/staff');
+        const staffData = await staffResponse.json();
+        staffData.forEach(s => { staffMap[s.staffId] = s.name; });
+
+        const response = await fetch('/api/readings');
+        allReadings = await response.json();
+        
+
+        // --- SAFE INDEPENDENT FETCH BLOCKS ---
+        try {
+            const densityRes = await fetch('/api/density');
+            if (densityRes.ok) {
+                allDensityLogs = await densityRes.json();
+            } else {
+                console.warn("Density endpoint returned status:", densityRes.status);
             }
+        } catch(e) { 
+            console.error("Density fetch failing safely:", e); 
         }
+
+        try {
+            const volumeRes = await fetch('/api/fuel-volume');
+            if (volumeRes.ok) {
+                allVolumeLogs = await volumeRes.json();
+            } else {
+                console.warn("Fuel Volume endpoint returned status:", volumeRes.status);
+            }
+        } catch(e) { 
+            console.error("Volume fetch failing safely:", e); 
+        }
+        // -------------------------------------
+
+        renderMasterTable(allReadings);
+        displayLastSubmittedReadings(allReadings);
+        renderShiftWiseTables(allReadings);
+        
+        // Render logs layout elements
+        renderDensityAndVolume();
+    } catch (error) {
+        console.error('Fetch lifecycle processing error:', error);
+    }
+}
         function renderInventoryHistory(history) {
     const container = document.getElementById('inventoryHistoryContainer');
     const tbody = document.getElementById('inventoryHistoryBody');
@@ -740,64 +862,76 @@ function displayLastSubmittedReadings(data) {
     });
 }
 
-       function filterData() {
+    function filterData() {
     const fromDate = document.getElementById('fromDate').value;
     const toDate = document.getElementById('toDate').value;
 
-    // 1. Filter Meter Readings (Existing logic)
     const filteredReadings = allReadings.filter(r => {
         const readingDate = r.currentDate; 
+        if (!readingDate) return false;
         if (fromDate && readingDate < fromDate) return false;
         if (toDate && readingDate > toDate) return false;
         return true;
     });
 
-    // 2. Filter Tank History (New logic)
     const filteredHistory = allHistory.filter(h => {
-        const historyDate = h.date; // Adjust if your API property name is different
+        const historyDate = h.date; 
+        if (!historyDate) return false;
         if (fromDate && historyDate < fromDate) return false;
         if (toDate && historyDate > toDate) return false;
         return true;
     });
     
-    // 3. Render Sales Data
+    // Render normal sales report metrics widgets
     displayLastSubmittedReadings(filteredReadings);
     renderShiftWiseTables(filteredReadings);
     renderMasterTable(filteredReadings);
-
-    // 4. Render History Reports (The function we created in the previous step)
     renderInventoryHistory(filteredHistory);
     
-    // Toggle the "No Data" message based on readings
+    // Execute our Density & Stock Level interface mapping
+    renderDensityAndVolume();
+    
+    // Check if EVERYTHING across all tables and custom inventory logs is empty 
+    // to toggle the master warning message box
+    const densityContainer = document.getElementById('densityLogsDisplay');
+    const volumeContainer = document.getElementById('volumeLogsDisplay');
+    
+    const hasDensityData = densityContainer && !densityContainer.innerHTML.includes("No records found");
+    const hasVolumeData = volumeContainer && !volumeContainer.innerHTML.includes("No records found");
+
     const noDataMessage = document.getElementById('noDataMessage');
-    if (filteredReadings.length === 0 && filteredHistory.length === 0) {
+    if (filteredReadings.length === 0 && filteredHistory.length === 0 && !hasDensityData && !hasVolumeData) {
         noDataMessage.classList.remove('hidden');
     } else {
         noDataMessage.classList.add('hidden');
     }
 }
 
-        function resetFilter() {
-    // 1. Clear the date inputs
+function resetFilter() {
+    // 1. Clear the date picker elements
     document.getElementById('fromDate').value = '';
     document.getElementById('toDate').value = '';
     
-    // 2. Re-render Meter Readings with the full global dataset
+    // 2. Re-render Meter Readings & Tank History back to full database global array snapshots
     displayLastSubmittedReadings(allReadings);
     renderShiftWiseTables(allReadings);
-    
-    // 3. Re-render Tank History with the full global dataset
-    // This ensures the "History Reports" table shows all records again
+    renderMasterTable(allReadings);
     renderInventoryHistory(allHistory); 
     
-    // 4. Hide the "No Data" message
+    // 3. Reset density and height level sections to show all logs unfiltered
+    renderDensityAndVolume();
+    
+    // 4. Force hide the "No Data" alert box block
     document.getElementById('noDataMessage').classList.add('hidden');
 
-    // 5. Scroll to top (Optional, but helpful for long reports)
+    // 5. Scroll smoothly back to top viewport coordinates
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-        window.onload = loadReadings;
+// Using an Event Listener prevents other scripts from silently overwriting your lifecycle initializations!
+window.addEventListener('DOMContentLoaded', () => {
+    loadReadings();
+});
     </script>
 </body>
 </html>
