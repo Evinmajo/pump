@@ -627,17 +627,22 @@
             // Add this helper inside your saveChanges function to extract entries
            // Correctly collect Packed Oil Entries with Category select box values
            data.packedOilEntries = [];
-           document.querySelectorAll('.packed-oil-row').forEach(row => {
-               const categorySelect = row.querySelector('.packed-oil-category');
-               const category = categorySelect ? categorySelect.value : 'Oil';
-               const name = row.querySelector('.packed-oil-name').value;
-               const amount = parseFloat(row.querySelector('.packed-oil-amount').value) || 0;
-               const price = parseFloat(row.querySelector('.packed-oil-price').value) || 0;
-               
-               if (name.trim() !== "") {
-                   data.packedOilEntries.push({ category, name, amount, price });
-               }
-           });
+    document.querySelectorAll('.packed-oil-row').forEach(row => {
+        const categorySelect = row.querySelector('.packed-oil-category');
+        const nameInput = row.querySelector('.packed-oil-name');
+        const amountInput = row.querySelector('.packed-oil-amount');
+        const priceInput = row.querySelector('.packed-oil-price');
+
+        // Check if elements exist to prevent broken script processing
+        const category = categorySelect ? categorySelect.value : 'Oil';
+        const name = nameInput ? nameInput.value : '';
+        const amount = amountInput ? parseFloat(amountInput.value) || 0 : 0;
+        const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+        
+        if (name.trim() !== "") {
+            data.packedOilEntries.push({ category, name, amount, price });
+        }
+    });
 
             // Collect dynamic credit entries
             data.creditEntries = [];
