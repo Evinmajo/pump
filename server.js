@@ -222,7 +222,7 @@ const readingSchema = new mongoose.Schema({
     batteryWater60: { type: Number, default: 0 },
     batteryWater150: { type: Number, default: 0 },
     acidWater: { type: Number, default: 0 },
-    packedOilEntries: [{ category: String, name: String, amount: Number, price: Number }],
+    packedOilEntries: [{ category: { type: String, default: 'Oil' }, name: String, amount: Number, price: Number }],
     creditEntries: [{ name: String, amount: Number }],
     debitEntries: [{ name: String, amount: Number }],
     note500: { type: Number, default: 0 },
