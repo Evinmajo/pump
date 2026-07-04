@@ -644,7 +644,7 @@ app.get('/api/transactions/packedOil', async (req, res) => {
                     }
 
                     // Compute dynamic row total: amount (Qty) * price (Rate)
-                    const rowTotalPrice = (Number(entry.amount) || 0) * (Number(entry.price) || 0);
+                    const rowTotalPrice = (Number(entry.price) || 0);
 
                     history.push({
                         date: reading.currentDate,
@@ -756,17 +756,30 @@ app.post('/api/saveReading', async (req, res) => {
     try {
         const data = req.body;
         const newReading = new Reading(req.body);
-        // Change your save line to this:
+        
+        // Save the daily reading record
         await newReading.save({ w: 'majority', j: true });
 
+        // Process inventory adjustments
         if (data.packedOilEntries && data.packedOilEntries.length > 0) {
-            for (const entry of data.packedOilEntries){
-                // Find the oil type in the stock and decrement the quantity
-                // We use $inc with a negative value to reduce the stock
-                await OilStock.findOneAndUpdate(
-                    { type: entry.name }, 
-                    { $inc: { quantity: -entry.amount } }
-                );
+            for (const entry of data.packedOilEntries) {
+                // If amount is zero or missing, skip updating stock
+                if (!entry.amount || entry.amount <= 0) continue; 
+
+                // Check if the sold item is one of the linked 5kg gas items
+                if (entry.name === '5kg Gas Refill For Rent' || entry.name === '5kg Gas full') {
+                    // Update BOTH items at the same time
+                    await OilStock.updateMany(
+                        { type: { $in: ['5kg Gas Refill For Rent', '5kg Gas full'] } }, 
+                        { $inc: { quantity: -entry.amount } }
+                    );
+                } else {
+                    // Standard single item deduction for normal oil types
+                    await OilStock.findOneAndUpdate(
+                        { type: entry.name }, 
+                        { $inc: { quantity: -entry.amount } }
+                    );
+                }
             }
         }
 
