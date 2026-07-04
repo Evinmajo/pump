@@ -10,8 +10,9 @@
             theme: {
                 extend: {
                     colors: { 
-                        billDark: '#1c1a1b',
-                        stampRed: '#a81c24'
+                        billDark: '#000000',
+                        stampRed: '#a81c24',
+                        invoiceBlue: '#1e3a8a'
                     },
                     fontFamily: {
                         mono: ['Courier New', 'Courier', 'monospace'],
@@ -34,29 +35,45 @@
                 width: 210mm;
                 height: 297mm;
                 margin: 0 auto;
-                padding: 5mm;
                 box-sizing: border-box;
                 page-break-after: always;
+                page-break-inside: avoid;
                 background: white !important;
                 border: none !important;
+            }
+            .a4-page.fuel-layout {
+                padding: 4mm 4mm !important;
+            }
+            .a4-page.gas-layout {
+                padding: 5mm 5mm !important;
             }
             [contenteditable="true"] { outline: none !important; }
         }
         .a4-page { 
             width: 210mm; 
-            min-height: 297mm; 
+            height: 297mm; 
             background: white;
             border: 1px solid #e5e7eb;
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body class="bg-gray-200 min-h-screen p-4 md:p-6 font-sans">
 
+    <!-- Control Panel -->
     <div class="max-w-xl mx-auto bg-white rounded-xl shadow-md p-6 mb-8 no-print border-t-4 border-black">
         <h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">T.V.J. Petroleum Company</h1>
-        <p class="text-center text-[10px] text-gray-500 mb-6 uppercase tracking-widest font-bold">Kandassankadavu • Dynamic Pricing Sheet Engine</p>
+        <p class="text-center text-[10px] text-gray-500 mb-6 uppercase tracking-widest font-bold">Kandassankadavu • Unified Invoice Engine</p>
         
         <div class="flex flex-col gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-gray-600 mb-1">Select Engine Type:</label>
+                <select id="engineMode" onchange="toggleEngineInputs()" class="border rounded-md p-2 bg-white outline-none focus:ring-2 focus:ring-black font-semibold text-sm">
+                    <option value="fuel">Fuel Splits Engine (Petrol, Diesel, Oil) [8/Page]</option>
+                    <option value="gas">Gas Invoice Engine (GST 18%) [2/Page]</option>
+                </select>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div class="flex flex-col">
                     <label class="text-xs font-bold text-gray-600 mb-1">From Date:</label>
@@ -69,38 +86,84 @@
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <div class="flex flex-col">
+                <div id="othersRateWrapper" class="flex flex-col">
                     <label class="text-xs font-bold text-gray-600 mb-1">Others Rate (Per Qty):</label>
                     <input type="number" id="othersRateInput" step="0.01" min="0" value="0.00" class="border rounded-md p-2 outline-none focus:ring-2 focus:ring-black font-mono text-sm" placeholder="Enter rate...">
                 </div>
-                <div class="flex flex-col">
+                <div class="flex flex-col id-span">
                     <label class="text-xs font-bold text-gray-600 mb-1">Starting Bill No:</label>
                     <input type="number" id="startBillNoInput" min="1" value="1" class="border rounded-md p-2 outline-none focus:ring-2 focus:ring-black font-mono text-sm" placeholder="e.g. 10">
                 </div>
             </div>
 
             <div class="flex gap-2">
-                <button onclick="generateSplitBills()" class="flex-1 bg-gray-700 text-white font-bold py-3 rounded-md hover:bg-gray-800 transition">
+                <button onclick="executeGenerator()" class="flex-1 bg-gray-700 text-white font-bold py-3 rounded-md hover:bg-gray-800 transition">
                     Generate Bills
                 </button>
                 <button id="masterPrintBtn" onclick="window.print()" class="hidden flex-1 bg-black text-white font-bold py-3 rounded-md hover:bg-gray-900 transition">
-                    Print All Sheets
+                    Print Sheets
                 </button>
             </div>
             <p class="text-[9px] text-blue-600 font-bold text-center italic">Tip: Values can be manually edited on screen directly before printing.</p>
         </div>
     </div>
 
+    <!-- Target Output Wrapper Container -->
     <div id="printSheetsWrapper" class="flex flex-col gap-8 items-center justify-center"></div>
 
     <script>
         let allReadings = [];
 
+       const localDealers = [
+    { name: "Kishore Mondal", address: "Kandassankadavu, Thrissur", phone: "8921360567" },
+    { name: "Suresh Kumar K.", address: "Kandassankadavu, Thrissur", phone: "9847521034" },
+    { name: "Abdul Rahman P.M.", address: "Kandassankadavu, Thrissur", phone: "9446215780" },
+    { name: "Anjali Menon", address: "Kandassankadavu, Thrissur", phone: "8129430561" },
+    { name: "Joy Sebastian", address: "Kandassankadavu, Thrissur", phone: "9037412589" },
+    { name: "Ramesh Chittilappilly", address: "Kanjany, Thrissur", phone: "9495021436" },
+    { name: "Faisal K.Y.", address: "Mullassery, Thrissur", phone: "9744102587" },
+    { name: "Nithin V.S.", address: "Kanjany, Thrissur", phone: "8547123690" },
+    { name: "Sreedharan Nair P.", address: "Manalur, Thrissur", phone: "9895012478" },
+    { name: "Mariyam Thoma", address: "Manalur, Thrissur", phone: "9447812543" },
+    { name: "Vinu Prasad", address: "Manalur, Thrissur", phone: "7012458963" },
+    { name: "Girish Babu M.", address: "Anthikad, Thrissur", phone: "9496125478" },
+    { name: "Saritha Rajesh", address: "Padiyam, Thrissur", phone: "9605124789" },
+    { name: "Thomas Paul", address: "Anthikad, Thrissur", phone: "8281452369" }
+];
         async function init() {
             const res = await fetch('/api/readings');
             if (res.ok) allReadings = await res.json();
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fromDate').value = today;
+            document.getElementById('toDate').value = today;
         }
 
+        function toggleEngineInputs() {
+            const mode = document.getElementById('engineMode').value;
+            const rateInput = document.getElementById('othersRateWrapper');
+            const startInputSpan = document.querySelector('.id-span');
+            
+            if (mode === 'gas') {
+                rateInput.classList.add('hidden');
+                startInputSpan.classList.remove('grid-cols-2');
+                startInputSpan.classList.add('col-span-2');
+            } else {
+                rateInput.classList.remove('hidden');
+                startInputSpan.classList.remove('col-span-2');
+            }
+        }
+
+        function executeGenerator() {
+            const mode = document.getElementById('engineMode').value;
+            if (mode === 'gas') {
+                generateGasBills();
+            } else {
+                generateSplitBills();
+            }
+        }
+
+        // 1. Fuel Splits Mode (8 per sheet)
         function generateSplitBills() {
             const from = document.getElementById('fromDate').value;
             const to = document.getElementById('toDate').value;
@@ -115,7 +178,6 @@
             const rangeData = allReadings.filter(r => r.currentDate >= from && r.currentDate <= to);
             const dailyMap = {};
 
-            // 1. Map & Aggregate Cumulative Daily Data
             rangeData.forEach(r => {
                 const d = r.currentDate;
                 if (!dailyMap[d]) {
@@ -129,37 +191,29 @@
                     };
                 }
 
-                // Fuel Gross sales calculations (Second reading minus First Reading)
                 for(let i = 1; i <= 6; i++) {
                     dailyMap[d].pGross += Math.max(0, (r[`secondReading${i}`] || 0) - (r[`firstReading${i}`] || 0));
                     dailyMap[d].dGross += Math.max(0, (r[`dieselSecondReading${i}`] || 0) - (r[`dieselFirstReading${i}`] || 0));
                 }
 
-                // Deduct Test Quantities to transform from Gross Sold into Net Sold volume quantities
                 dailyMap[d].pGross = Math.max(0, dailyMap[d].pGross - (Number(r.petrolTestQuantity) || 0));
                 dailyMap[d].dGross = Math.max(0, dailyMap[d].dGross - (Number(r.dieselTestQuantity) || 0));
 
-                // REMOVED: Loose Oil Data Calculation is no longer processed here.
-
-                // Packed Oil Entries Data Calculation - Accumulating amount (quantity) strictly when category matches 'Oil'
                 const packedOilQty = (r.packedOilEntries || []).reduce((sum, po) => {
-                    if (po.category === 'Oil') {
+                    if (po.category === 'Oil' ) {
                         return sum + (Number(po.amount) || 0);
                     }
                     return sum;
                 }, 0);
 
-                // Add ONLY the packed oil quantity to the master pool quantity
                 dailyMap[d].totalOthersQty += packedOilQty;
             });
 
             const finalInvoices = [];
             const MAX_CAPPING = 199000;
 
-            // 2. Loop Chronologically through daily structures and apply split rule
             Object.keys(dailyMap).sort().forEach(dateKey => {
                 const day = dailyMap[dateKey];
-                
                 let remP = day.pGross;
                 let remD = day.dGross;
                 let remOQty = day.totalOthersQty;
@@ -167,11 +221,8 @@
                 while (remP > 0 || remD > 0 || remOQty > 0) {
                     let bP = 0, bD = 0, bOQty = 0, currentTotal = 0;
 
-                    // Allocate Combined Others segment up to maximum threshold capping limit
                     if (remOQty > 0) {
                         const maxOAmountAvailable = MAX_CAPPING - currentTotal;
-                        
-                        // Calculate maximum allowable quantity based on the user-entered custom rate input configuration
                         let allowedQtyByCap = remOQty;
                         if (userOthersRate > 0) {
                             allowedQtyByCap = maxOAmountAvailable / userOthersRate;
@@ -182,7 +233,6 @@
                         remOQty -= bOQty;
                     }
 
-                    // Feed Petrol into remaining capacity bracket
                     if (currentTotal < MAX_CAPPING && remP > 0) {
                         const maxPValue = MAX_CAPPING - currentTotal;
                         bP = Math.min(remP, maxPValue / day.pRate);
@@ -190,7 +240,6 @@
                         remP -= bP;
                     }
 
-                    // Feed Diesel into remaining capacity bracket
                     if (currentTotal < MAX_CAPPING && remD > 0) {
                         const maxDValue = MAX_CAPPING - currentTotal;
                         bD = Math.min(remD, maxDValue / day.dRate);
@@ -213,73 +262,70 @@
             if (!finalInvoices.length) { printBtn.classList.add('hidden'); return; }
             printBtn.classList.remove('hidden');
 
-            // Initialize global numbering using user-entered box setting override parameter
             let globalBillNo = startBillNo;
 
-            // 3. Document Matrix Layout Construction (10 components per printed sheet block)
-            for (let i = 0; i < finalInvoices.length; i += 10) {
-                const chunk = finalInvoices.slice(i, i + 10);
+            for (let i = 0; i < finalInvoices.length; i += 8) {
+                const chunk = finalInvoices.slice(i, i + 8);
                 const page = document.createElement('div');
-                page.className = "a4-page shadow-2xl grid grid-cols-2 grid-rows-5 gap-2 p-2 mb-10";
+                page.className = "a4-page fuel-layout shadow-2xl grid grid-cols-2 grid-rows-4 gap-x-3 gap-y-2 p-3 mb-10 bg-white";
                 
                 chunk.forEach(inv => {
                     page.insertAdjacentHTML('beforeend', `
-                        <div class="bg-white text-billDark p-2 flex flex-col justify-between border border-gray-300 text-[9px] h-full leading-tight relative">
+                        <div class="bg-white text-billDark p-2 flex flex-col justify-between border-2 border-black text-xs h-full leading-tight relative font-bold">
                             <div>
-                                <div class="flex justify-between text-[7px] font-bold mb-1">
+                                <div class="flex justify-between text-[9px] font-black border-b border-black pb-0.5 mb-1">
                                     <span>GST: 32ASMPM8868J1ZO</span>
-                                    <span class="pr-2">CASH BILL</span>
-                                    <span>Ph:</span>
+                                    <span class="text-xs uppercase">CASH BILL</span>
+                                    <span>Ph: 9447133402</span>
                                 </div>
-                                <div class="text-center border-b border-black pb-1 mb-1">
-                                    <h1 class="text-[10px] font-serifHeader font-black uppercase tracking-tight">T.V.J. PETROLEUM COMPANY</h1>
-                                    <p class="text-[7px] font-bold">INDIAN OIL DEALER</p>
-                                    <p class="text-[6px] uppercase">KANDASSANKADAVU, THRISSUR-680613</p>
+                                <div class="text-center border-b border-black pb-0.5 mb-1">
+                                    <h1 class="text-sm font-serifHeader font-black uppercase tracking-tighter">T.V.J. PETROLEUM COMPANY</h1>
+                                    <p class="text-[9px] font-black tracking-tight">INDIAN OIL DEALER • KANDASSANKADAVU</p>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2 font-bold text-[8px] mb-1">
-                                    <div class="flex items-end">
-                                        No. <span class="text-stampRed text-lg ml-1 font-serifHeader" contenteditable="true">${globalBillNo++}</span>
+                                <div class="grid grid-cols-2 gap-1 text-[11px] font-black mb-1">
+                                    <div class="flex items-center">
+                                        No. <span class="text-stampRed text-lg ml-1 font-serifHeader font-black" contenteditable="true">${globalBillNo++}</span>
                                     </div>
                                     <div class="text-right">
-                                        Date: <span class="border-b border-dotted border-black px-1" contenteditable="true">${inv.date}</span>
+                                        Date: <span class="border-b border-black px-1 font-mono font-black" contenteditable="true">${inv.date}</span>
                                     </div>
                                 </div>
-                                <div class="mb-1 text-[8px] font-bold">
-                                    To: <span contenteditable="true" class="border-b border-dotted border-black min-w-[100px] inline-block">.................................................................</span>
+                                <div class="mb-1 text-[11px] font-black">
+                                    To: <span contenteditable="true" class="border-b border-dotted border-black min-w-[130px] inline-block">...................................................</span>
                                 </div>
-                                <table class="w-full text-[8px] border-t border-b border-black border-collapse">
-                                    <tr class="border-b border-black font-bold uppercase text-[7px]">
+                                <table class="w-full text-[11px] border-t-2 border-b-2 border-black border-collapse font-black">
+                                    <tr class="border-b-2 border-black font-black uppercase text-[9px] bg-gray-100">
                                         <th class="text-left py-0.5 px-1 border-r border-black">Particulars</th>
-                                        <th class="text-right py-0.5 px-1 border-r border-black">Qty Sold</th>
-                                        <th class="text-right py-0.5 px-1">Total Price</th>
+                                        <th class="text-right py-0.5 px-1 border-r border-black w-16">Qty</th>
+                                        <th class="text-right py-0.5 px-1 w-20">Amount</th>
                                     </tr>
-                                    <tr class="border-b border-black/10">
-                                        <td class="px-1 border-r border-black">Petrol</td>
-                                        <td class="text-right font-mono px-1 border-r border-black" contenteditable="true">${inv.bP.toFixed(2)}</td>
-                                        <td class="text-right font-mono px-1" contenteditable="true">₹${(inv.bP*inv.pRate).toFixed(2)}</td>
+                                    <tr class="border-b border-black/30 h-5">
+                                        <td class="px-1 border-r border-black font-black">Petrol</td>
+                                        <td class="text-right font-mono font-black px-1 border-r border-black" contenteditable="true">${inv.bP.toFixed(2)}</td>
+                                        <td class="text-right font-mono font-black px-1" contenteditable="true">₹${(inv.bP*inv.pRate).toFixed(2)}</td>
                                     </tr>
-                                    <tr class="border-b border-black/10">
-                                        <td class="px-1 border-r border-black">Diesel</td>
-                                        <td class="text-right font-mono px-1 border-r border-black" contenteditable="true">${inv.bD.toFixed(2)}</td>
-                                        <td class="text-right font-mono px-1" contenteditable="true">₹${(inv.bD*inv.dRate).toFixed(2)}</td>
+                                    <tr class="border-b border-black/30 h-5">
+                                        <td class="px-1 border-r border-black font-black">Diesel</td>
+                                        <td class="text-right font-mono font-black px-1 border-r border-black" contenteditable="true">${inv.bD.toFixed(2)}</td>
+                                        <td class="text-right font-mono font-black px-1" contenteditable="true">₹${(inv.bD*inv.dRate).toFixed(2)}</td>
                                     </tr>
-                                    <tr class="border-b border-black/10">
-                                        <td class="px-1 border-r border-black">Others</td>
-                                        <td class="text-right font-mono px-1 border-r border-black" contenteditable="true">
-                                            ${inv.bOQty > 0 ? inv.bOQty.toFixed(2) : '---'}
+                                    <tr class="border-b-2 border-black h-5">
+                                        <td class="px-1 border-r border-black font-black">Others</td>
+                                        <td class="text-right font-mono font-black px-1 border-r border-black" contenteditable="true">
+                                            ${inv.bOQty > 0 ? inv.bOQty.toFixed(2) : '0.00'}
                                         </td>
-                                        <td class="text-right font-mono px-1" contenteditable="true">
-                                            ${inv.bOQty > 0 ? '₹' + inv.bOAmount.toFixed(2) : '---'}
+                                        <td class="text-right font-mono font-black px-1" contenteditable="true">
+                                            ${inv.bOQty > 0 ? '₹' + inv.bOAmount.toFixed(2) : '₹0.00'}
                                         </td>
                                     </tr>
-                                    <tr class="font-bold bg-gray-50">
-                                        <td colspan="2" class="text-right py-0.5 pr-2 border-r border-black uppercase text-[7px]">Total Amount:</td>
-                                        <td class="text-right font-mono px-1" contenteditable="true">₹${inv.total.toFixed(2)}</td>
+                                    <tr class="bg-gray-50 text-xs h-6 font-black">
+                                        <td colspan="2" class="text-right pr-2 border-r border-black uppercase text-[9px] font-black">Total:</td>
+                                        <td class="text-right font-mono px-1 font-black" contenteditable="true">₹${inv.total.toFixed(2)}</td>
                                     </tr>
                                 </table>
                             </div>
-                            <div class="flex justify-between items-center text-[6px] font-bold mt-1 uppercase">
-                                <span class="text-gray-400 italic">E.& O.E.</span>
+                            <div class="flex justify-between items-center text-[8px] font-black uppercase mt-0.5">
+                                <span class="italic text-gray-500">E.& O.E.</span>
                                 <span>For T.V.J. Petroleum Co.</span>
                             </div>
                         </div>
@@ -288,6 +334,176 @@
                 wrapper.appendChild(page);
             }
         }
+
+        // 2. Gas Engine Mode
+        async function generateGasBills() {
+            const from = document.getElementById('fromDate').value;
+            const to = document.getElementById('toDate').value;
+            const startBillNo = parseInt(document.getElementById('startBillNoInput').value) || 1;
+            
+            const wrapper = document.getElementById('printSheetsWrapper');
+            const printBtn = document.getElementById('masterPrintBtn');
+
+            if (!from || !to) return alert("Please select dates");
+
+            let gasTransactions = [];
+            try {
+                const response = await fetch(`/api/transactions/packedOil?fromDate=${from}&toDate=${to}&category=Gas`);
+                if (!response.ok) throw new Error("Failed fetching system logs");
+                gasTransactions = await response.json();
+            } catch (err) {
+                console.error(err);
+                return alert("Error loading history backend logs.");
+            }
+
+            wrapper.innerHTML = '';
+            if (!gasTransactions || gasTransactions.length === 0) {
+                printBtn.classList.add('hidden');
+                return alert("No gas transaction logs matching this timeline.");
+            }
+            
+            printBtn.classList.remove('hidden');
+            let globalBillNo = startBillNo;
+
+            for (let i = 0; i < gasTransactions.length; i += 2) {
+                const chunk = gasTransactions.slice(i, i + 2);
+                const page = document.createElement('div');
+                page.className = "a4-page gas-layout shadow-2xl grid grid-cols-1 grid-rows-2 gap-4 p-4 mb-10 bg-white overflow-hidden";
+                
+                chunk.forEach(item => {
+                    const qty = Number(item.quantity) || 0;
+                    const totalPrice = Number(item.price) || 0;
+                    
+                    const randomDealer = localDealers[Math.floor(Math.random() * localDealers.length)];
+                    
+                    const basePrice = totalPrice / 1.18;
+                    const totalTax = totalPrice - basePrice;
+                    const splitTax = totalTax / 2;
+                    const unitRate = qty > 0 ? (basePrice / qty) : 0;
+
+                    page.insertAdjacentHTML('beforeend', `
+                        <div class="bg-white p-5 flex flex-col justify-between border-2 border-invoiceBlue text-invoiceBlue text-sm h-[136mm] box-border leading-tight relative font-bold">
+                            <div>
+                                <!-- Header Section -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 border-b-2 border-invoiceBlue pb-2">
+                                    <div class="pr-4 border-r-0 md:border-r-2 border-invoiceBlue">
+                                        <div class="text-right text-xs font-black mb-0.5">PH : 9447133402</div>
+                                        <h1 class="text-lg font-black tracking-tight font-serifHeader">T.V.J. PETROLEUM COMPANY</h1>
+                                        <p class="font-black text-xs tracking-wide">INDIAN OIL DEALER</p>
+                                        <p class="text-[11px] font-bold text-gray-700">Kandassankadavu, Thrissur-680 613</p>
+                                        <div class="mt-1">
+                                            <span class="border-2 border-invoiceBlue font-black px-2 py-0.5 text-xs tracking-wide bg-gray-50">GST : 32ASMPM8868J1ZO</span>
+                                        </div>
+                                    </div>
+                                    <div class="pl-0 md:pl-4 pt-2 md:pt-0 flex flex-col justify-between">
+                                        <div>
+                                            <h2 class="text-base font-black tracking-widest text-right md:text-left mb-0.5">RETAIL INVOICE</h2>
+                                            <div class="space-y-1 text-xs">
+                                                <div class="flex items-start flex-col">
+                                                    <span class="text-[10px] text-gray-500 uppercase font-black tracking-wider">Purchasing Dealer:</span>
+                                                    <span class="font-black border-b border-dotted border-invoiceBlue w-full text-xs text-black pt-0.5 truncate" contenteditable="true">${randomDealer.name}, ${randomDealer.address}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 text-xs font-black mt-1">
+                                            <div>GST No: <span class="border-b border-dotted border-invoiceBlue px-2" contenteditable="true">...................</span></div>
+                                            <div class="text-right">Ph: <span class="font-black text-black" contenteditable="true">${randomDealer.phone}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Invoice Meta -->
+                                <div class="grid grid-cols-2 py-2 text-sm font-black">
+                                    <div class="flex items-center">
+                                        <span>Invoice No:</span>
+                                        <span class="text-red-600 font-black text-xl ml-3 tracking-wide font-mono" contenteditable="true">${globalBillNo++}</span>
+                                    </div>
+                                    <div class="flex items-center justify-end">
+                                        <span>Date: <span class="border-b border-dotted border-invoiceBlue px-2 font-mono font-black text-black text-base" contenteditable="true">${item.date}</span></span>
+                                    </div>
+                                </div>
+
+                                <!-- Table Structure -->
+                                <div class="overflow-x-auto">
+                                    <table class="w-full border-collapse border-2 border-invoiceBlue text-xs font-black text-center">
+                                        <thead>
+                                            <tr class="border-b-2 border-invoiceBlue bg-gray-100 text-[11px] h-7">
+                                                <th class="border-r-2 border-invoiceBlue py-1 w-8">Sl.</th>
+                                                <th class="border-r-2 border-invoiceBlue py-1 min-w-[150px] text-left px-2">Commodity</th>
+                                                <th class="border-r-2 border-invoiceBlue py-1 w-22">HSN</th>
+                                                <th class="border-r-2 border-invoiceBlue py-1 w-18">Rate</th>
+                                                <th class="border-r-2 border-invoiceBlue py-1 w-12">Qty</th>
+                                                <th class="border-r-2 border-invoiceBlue py-1 w-22">Taxable</th>
+                                                <th class="border-r-2 border-invoiceBlue py-0.5 w-20" colspan="2">CGST</th>
+                                                <th class="border-r-2 border-invoiceBlue py-0.5 w-20" colspan="2">SGST</th>
+                                                <th class="py-1 w-26">Total</th>
+                                            </tr>
+                                            <tr class="border-b-2 border-invoiceBlue bg-gray-50 text-[10px] h-5">
+                                                <th class="border-r-2 border-invoiceBlue"></th>
+                                                <th class="border-r-2 border-invoiceBlue"></th>
+                                                <th class="border-r-2 border-invoiceBlue"></th>
+                                                <th class="border-r-2 border-invoiceBlue"></th>
+                                                <th class="border-r-2 border-invoiceBlue"></th>
+                                                <th class="border-r-2 border-invoiceBlue"></th>
+                                                <th class="border-r border-invoiceBlue p-0 w-7 font-bold">%</th>
+                                                <th class="border-r-2 border-invoiceBlue p-0 font-bold">Amt.</th>
+                                                <th class="border-r border-invoiceBlue p-0 w-7 font-bold">%</th>
+                                                <th class="border-r-2 border-invoiceBlue p-0 font-bold">Amt.</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="h-20 border-b-2 border-invoiceBlue align-middle font-mono text-xs">
+                                                <td class="border-r-2 border-invoiceBlue font-bold text-center">1.</td>
+                                                <td class="border-r-2 border-invoiceBlue text-left px-2 font-sans font-black text-black text-sm" contenteditable="true">${item.name}</td>
+                                                <td class="border-r-2 border-invoiceBlue" contenteditable="true">27111900</td>
+                                                <td class="border-r-2 border-invoiceBlue text-right px-1" contenteditable="true">₹${unitRate.toFixed(2)}</td>
+                                                <td class="border-r-2 border-invoiceBlue text-black font-black text-sm" contenteditable="true">${qty}</td>
+                                                <td class="border-r-2 border-invoiceBlue text-right px-1" contenteditable="true">₹${basePrice.toFixed(2)}</td>
+                                                <td class="border-r border-invoiceBlue font-sans font-bold text-[10px]">9%</td>
+                                                <td class="border-r-2 border-invoiceBlue text-right px-1" contenteditable="true">₹${splitTax.toFixed(2)}</td>
+                                                <td class="border-r border-invoiceBlue font-sans font-bold text-[10px]">9%</td>
+                                                <td class="border-r-2 border-invoiceBlue text-right px-1" contenteditable="true">₹${splitTax.toFixed(2)}</td>
+                                                <td class="text-right px-1 font-black text-black text-sm" contenteditable="true">₹${totalPrice.toFixed(2)}</td>
+                                            </tr>
+                                            <tr class="font-black bg-gray-100 text-xs h-8">
+                                                <td class="border-r-2 border-invoiceBlue text-center font-sans font-black" colspan="2">TOTAL</td>
+                                                <td class="border-r-2 border-invoiceBlue"></td>
+                                                <td class="border-r-2 border-invoiceBlue"></td>
+                                                <td class="border-r-2 border-invoiceBlue"></td>
+                                                <td class="border-r-2 border-invoiceBlue text-right px-1 font-mono">₹${basePrice.toFixed(2)}</td>
+                                                <td class="border-r border-invoiceBlue"></td>
+                                                <td class="border-r-2 border-invoiceBlue text-right px-1 font-mono">₹${splitTax.toFixed(2)}</td>
+                                                <td class="border-r border-invoiceBlue"></td>
+                                                <td class="border-r-2 border-invoiceBlue text-right px-1 font-mono">₹${splitTax.toFixed(2)}</td>
+                                                <td class="text-right px-1 font-mono text-black font-black text-sm">₹${totalPrice.toFixed(2)}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Block with Signature Asset -->
+                            <div class="mt-2 flex justify-between items-end text-xs font-black gap-4 relative pb-1">
+                                <div class="flex-grow pb-1">
+                                    <div class="flex items-end">
+                                        <span class="italic whitespace-nowrap text-[11px]">Grand Total in words:</span>
+                                        <span class="border-b border-dotted border-invoiceBlue flex-grow ml-1 h-5 text-black text-xs font-semibold" contenteditable="true"></span>
+                                    </div>
+                                </div>
+                                <div class="text-right flex flex-col items-center justify-end relative min-w-[160px] h-14">
+                                    <!-- Dynamic clean preview image link -->
+                                    <img src="./img/IMG_20260704_184520-removebg-preview.png" alt="Signature" class="absolute bottom-4 right-6 w-20 h-auto mix-blend-multiply opacity-95 pointer-events-none select-none">
+                                    <span class="border-t-2 border-black/30 pt-1 px-2 block font-black text-[10px] text-black tracking-tight uppercase relative z-10">Signature of Proprietor</span>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                });
+                wrapper.appendChild(page);
+            }
+        }
+
         window.onload = init;
     </script>
 </body>
