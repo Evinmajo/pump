@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packed Oil, Battery Water & Gas Sales Entry</title>
+    <link rel="icon" type="image/png" href="https://toppng.com/uploads/preview/indian-oil-corporation-vector-logo-11574259324ulqkuccpqn.png">
+    <script src="./style.js"></script>
+    <style>
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-blue-600 font-sans min-h-screen flex items-center justify-center p-4 antialiased">
+    <div class="bg-white p-6 sm:p-8 md:p-10 rounded-xl shadow-2xl w-full max-w-xl md:max-w-2xl lg:max-w-3xl my-auto">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Packed Item Sales Entry</h1>
+
+        <!-- Step 1: Search / Filter Block -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div>
+                <label for="filterDate" class="block text-sm font-semibold text-gray-700 mb-2">Select Date</label>
+                <input type="date" id="filterDate" class="w-full p-3 border border-gray-300 rounded-lg text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="staffSelect" class="block text-sm font-semibold text-gray-700 mb-2">Select Staff Entry</label>
+                <select id="staffSelect" class="w-full p-3 border border-gray-300 rounded-lg text-center font-bold bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" disabled>
+                    <option value="">-- Pick Date First --</option>
+                </select>
+            </div>
+        </div>
+
+        <hr class="my-6 border-t border-gray-200">
+
+        <!-- Step 2: Sales Entries Section -->
+        <div class="mb-6">
+            <h2 class="block text-lg sm:text-xl font-semibold text-gray-700 mb-4 text-center">Packed Oil, Battery Water & Gas Sales</h2>
+            <div id="packedOilEntriesContainer" class="space-y-3"></div>
+            <button type="button" onclick="addPackedOilEntry()" class="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg text-md transition duration-200 shadow-sm">
+                + Add Sales Entry
+            </button>
+        </div>
+
+        <hr class="my-6 border-t border-gray-200">
+
+        <button type="button" onclick="savePackedSales()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-4 rounded-lg text-xl transition duration-200 shadow-md">
+            Save Sales Entry
+        </button>
+    </div>
+
+    <script>
+        let availableOilTypes = [];
+        let fetchedReadingsMap = {};
+        let activeReadingId = null;
+
+        function showMessageBox(message, type) {
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black/50 z-40';
+            document.body.appendChild(overlay);
+
+            const messageBox = document.createElement('div');
+            messageBox.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-xl shadow-2xl z-50 text-center max-w-sm w-11/12';
+
+            const messageText = document.createElement('p');
+            messageText.textContent = message;
+            messageText.className = `text-lg font-semibold mb-6 ${type === 'success' ? 'text-green-600' : 'text-red-600'}`;
+            messageBox.appendChild(messageText);
+
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'OK';
+            closeBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200';
+            closeBtn.onclick = () => {
+                document.body.removeChild(messageBox);
+                document.body.removeChild(overlay);
+            };
+            messageBox.appendChild(closeBtn);
+            document.body.appendChild(messageBox);
+        }
+
+        async function fetchOilTypes() {
+            try {
+                const response = await fetch('/api/oilStock');
+                if (response.ok) {
+                    const data = await response.json();
+                    availableOilTypes = data.map(oil => oil.type);
+                }
+            } catch (err) { 
+                console.error('Error fetching oil types:', err); 
+            }
+        }
+
+        function addPackedOilEntry(category = 'Oil', name = '', amount = '', price = '') {
+            const container = document.getElementById('packedOilEntriesContainer');
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'flex flex-col sm:flex-row items-center gap-2 mb-3 bg-gray-50 p-3 rounded-lg border border-gray-200 packed-oil-row';
+
+            const categorySelect = document.createElement('select');
+            categorySelect.className = 'w-full sm:w-1/4 p-3 border border-gray-300 rounded-lg text-center bg-white font-medium packed-oil-category focus:outline-none focus:ring-2 focus:ring-blue-500';
+            categorySelect.innerHTML = `
+                <option value="Oil" ${category === 'Oil' ? 'selected' : ''}>Oil</option>
+                <option value="Battery Water" ${category === 'Battery Water' ? 'selected' : ''}>Battery Water</option>
+                <option value="Gas" ${category === 'Gas' ? 'selected' : ''}>Gas</option>
+            `;
+
+            const nameSelect = document.createElement('select');
+            nameSelect.className = 'w-full sm:w-1/4 p-3 border border-gray-300 rounded-lg text-center bg-white font-medium packed-oil-name focus:outline-none focus:ring-2 focus:ring-blue-500';
+            
+            const populateNames = () => {
+                nameSelect.innerHTML = '<option value="" disabled selected>Select Item Type</option>';
+                availableOilTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    if (type === name) option.selected = true;
+                    nameSelect.appendChild(option);
+                });
+            };
+            populateNames();
+
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'number';
+            quantityInput.placeholder = 'Qty Sold';
+            quantityInput.value = amount;
+            quantityInput.className = 'w-full sm:w-1/4 p-3 border border-gray-300 rounded-lg text-center packed-oil-amount focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+            const priceInput = document.createElement('input');
+            priceInput.type = 'number';
+            priceInput.placeholder = 'Price/Rate';
+            priceInput.value = price;
+            priceInput.className = 'w-full sm:w-1/4 p-3 border border-gray-300 rounded-lg text-center packed-oil-price focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.innerHTML = '✕';
+            removeBtn.className = 'w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200';
+            removeBtn.onclick = () => container.removeChild(entryDiv);
+
+            entryDiv.appendChild(categorySelect);
+            entryDiv.appendChild(nameSelect);
+            entryDiv.appendChild(quantityInput);
+            entryDiv.appendChild(priceInput);
+            entryDiv.appendChild(removeBtn);
+            container.appendChild(entryDiv);
+        }
+
+        async function onDateChange() {
+            const dateVal = document.getElementById('filterDate').value;
+            const staffSelect = document.getElementById('staffSelect');
+            const container = document.getElementById('packedOilEntriesContainer');
+            
+            container.innerHTML = '';
+            staffSelect.innerHTML = '<option value="">-- Fetching Staff... --</option>';
+            staffSelect.disabled = true;
+            fetchedReadingsMap = {};
+            activeReadingId = null;
+
+            if (!dateVal) return;
+
+            try {
+                // Uses /api/readings?searchDate=YYYY-MM-DD based on your endpoint parameters
+                const [readingsRes, staffRes] = await Promise.all([
+                    fetch(`/api/readings?searchDate=${dateVal}`), 
+                    fetch('/api/staff')
+                ]);
+
+                if (readingsRes.ok && staffRes.ok) {
+                    const readings = await readingsRes.json();
+                    const staffList = await staffRes.json();
+
+                    if (!readings || readings.length === 0) {
+                        staffSelect.innerHTML = '<option value="">No entries found for date</option>';
+                        return;
+                    }
+
+                    staffSelect.innerHTML = '<option value="">-- Select Staff Entry --</option>';
+                    readings.forEach(item => {
+                        fetchedReadingsMap[item._id] = item;
+                        const staffInfo = staffList.find(s => s.staffId === item.selectedId);
+                        const staffName = staffInfo ? staffInfo.name : item.selectedId;
+
+                        const option = document.createElement('option');
+                        option.value = item._id;
+                        option.textContent = `${staffName} (ID: ${item.selectedId})`;
+                        staffSelect.appendChild(option);
+                    });
+                    staffSelect.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                showMessageBox('Failed to fetch data for selected date.', 'error');
+            }
+        }
+
+        function onStaffSelect() {
+            const container = document.getElementById('packedOilEntriesContainer');
+            container.innerHTML = '';
+            activeReadingId = document.getElementById('staffSelect').value;
+
+            if (activeReadingId && fetchedReadingsMap[activeReadingId]) {
+                const item = fetchedReadingsMap[activeReadingId];
+                if (item.packedOilEntries && item.packedOilEntries.length > 0) {
+                    item.packedOilEntries.forEach(entry => {
+                        addPackedOilEntry(entry.category || 'Oil', entry.name, entry.amount, entry.price);
+                    });
+                } else {
+                    addPackedOilEntry();
+                }
+            }
+        }
+
+        async function savePackedSales() {
+            if (!activeReadingId) {
+                showMessageBox('Please select a date and staff entry first.', 'error');
+                return;
+            }
+
+            const currentData = fetchedReadingsMap[activeReadingId];
+            const updatedEntries = [];
+
+            document.querySelectorAll('.packed-oil-row').forEach(row => {
+                const category = row.querySelector('.packed-oil-category')?.value || 'Oil';
+                const name = row.querySelector('.packed-oil-name')?.value;
+                const amount = parseFloat(row.querySelector('.packed-oil-amount')?.value) || 0;
+                const price = parseFloat(row.querySelector('.packed-oil-price')?.value) || 0;
+
+                if (name && (amount > 0 || price > 0)) {
+                    updatedEntries.push({ category, name, amount, price });
+                }
+            });
+
+            currentData.packedOilEntries = updatedEntries;
+
+            try {
+                // Uses PUT /api/reading/:id as defined in your Express application
+                const response = await fetch(`/api/reading/${activeReadingId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentData)
+                });
+
+                if (response.ok) {
+                    showMessageBox('Packed sales entries saved successfully!', 'success');
+                } else {
+                    showMessageBox('Failed to save packed sales entries.', 'error');
+                }
+            } catch (err) {
+                showMessageBox('Error connecting to the server.', 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchOilTypes();
+            document.getElementById('filterDate').addEventListener('change', onDateChange);
+            document.getElementById('staffSelect').addEventListener('change', onStaffSelect);
+        });
+    </script>
+</body>
+</html>
