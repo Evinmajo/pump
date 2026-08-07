@@ -278,76 +278,95 @@
 
         // Function to display transactions (remains the same as last update)
         function displayTransactions(data) {
-            transactionsDisplay.innerHTML = '';
-            let totalCredit = 0;
-            let totalDebit = 0;
+    transactionsDisplay.innerHTML = '';
+    let totalCredit = 0;
+    let totalDebit = 0;
 
-            const dates = Object.keys(data).sort((a, b) => new Date(a) - new Date(b));
+    const dates = Object.keys(data).sort((a, b) => new Date(a) - new Date(b));
 
-            if (dates.length === 0) {
-                transactionsDisplay.innerHTML = '<p class="no-data">No transactions found for the selected criteria.</p>';
-                return;
-            }
+    if (dates.length === 0) {
+        transactionsDisplay.innerHTML = '<p class="no-data">No transactions found for the selected criteria.</p>';
+        return;
+    }
 
-            dates.forEach(date => {
-                const dayData = data[date];
-                const dayDiv = document.createElement('div');
-                dayDiv.classList.add('transaction-day');
+    dates.forEach(date => {
+        const dayData = data[date];
+        const dayDiv = document.createElement('div');
+        dayDiv.classList.add('transaction-day');
 
-                const displayDate = new Date(date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                dayDiv.innerHTML = `<h3>Transactions on ${displayDate}</h3>`;
+        // Track totals for this specific day
+        let dailyCredit = 0;
+        let dailyDebit = 0;
 
-                // Display Credits
-                if (dayData.credits.length > 0) {
-                    const creditHeader = document.createElement('p');
-                    creditHeader.innerHTML = '<strong>Credits:</strong>';
-                    dayDiv.appendChild(creditHeader);
-                    dayData.credits.forEach(credit => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.classList.add('transaction-item', 'credit');
-                        itemDiv.innerHTML = `
-                            <span class="type">Credit</span>
-                            <span class="name-label">Name:</span>
-                            <span class="party">${credit.name}</span>
-                            <span class="amount">₹${credit.amount.toFixed(2)}</span>
-                        `;
-                        dayDiv.appendChild(itemDiv);
-                        totalCredit += credit.amount;
-                    });
-                }
+        const displayDate = new Date(date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        dayDiv.innerHTML = `<h3>Transactions on ${displayDate}</h3>`;
 
-                // Display Debits
-                if (dayData.debits.length > 0) {
-                    const debitHeader = document.createElement('p');
-                    debitHeader.innerHTML = '<strong>Debits:</strong>';
-                    dayDiv.appendChild(debitHeader);
-                    dayData.debits.forEach(debit => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.classList.add('transaction-item', 'debit');
-                        itemDiv.innerHTML = `
-                            <span class="type">Debit</span>
-                            <span class="name-label">Name:</span>
-                            <span class="party">${debit.name}</span>
-                            <span class="amount">₹${debit.amount.toFixed(2)}</span>
-                        `;
-                        dayDiv.appendChild(itemDiv);
-                        totalDebit += debit.amount;
-                    });
-                }
-                transactionsDisplay.appendChild(dayDiv);
+        // Display Credits
+        if (dayData.credits.length > 0) {
+            const creditHeader = document.createElement('p');
+            creditHeader.innerHTML = '<strong>Credits:</strong>';
+            dayDiv.appendChild(creditHeader);
+            dayData.credits.forEach(credit => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('transaction-item', 'credit');
+                itemDiv.innerHTML = `
+                    <span class="type">Credit</span>
+                    <span class="name-label">Name:</span>
+                    <span class="party">${credit.name}</span>
+                    <span class="amount">₹${credit.amount.toFixed(2)}</span>
+                `;
+                dayDiv.appendChild(itemDiv);
+                
+                dailyCredit += credit.amount;
+                totalCredit += credit.amount;
             });
-
-            // Display Summary
-            transactionSummary.innerHTML = `
-                Total Credits: ₹${totalCredit.toFixed(2)} | Total Debits: ₹${totalDebit.toFixed(2)}
-                <br>Net Amount: ₹${(totalCredit - totalDebit).toFixed(2)}
-            `;
-            transactionSummary.style.display = 'block';
         }
+
+        // Display Debits
+        if (dayData.debits.length > 0) {
+            const debitHeader = document.createElement('p');
+            debitHeader.innerHTML = '<strong>Debits:</strong>';
+            dayDiv.appendChild(debitHeader);
+            dayData.debits.forEach(debit => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('transaction-item', 'debit');
+                itemDiv.innerHTML = `
+                    <span class="type">Debit</span>
+                    <span class="name-label">Name:</span>
+                    <span class="party">${debit.name}</span>
+                    <span class="amount">₹${debit.amount.toFixed(2)}</span>
+                `;
+                dayDiv.appendChild(itemDiv);
+                
+                dailyDebit += debit.amount;
+                totalDebit += debit.amount;
+            });
+        }
+
+        // Append Daily Summary Box inside the day card
+        const dailySummaryDiv = document.createElement('div');
+        dailySummaryDiv.style.cssText = 'margin-top: 15px; padding-top: 10px; border-top: 1px solid #ccc; font-weight: bold; background-color: #f0f4f8; padding: 10px; border-radius: 6px;';
+        dailySummaryDiv.innerHTML = `
+            Day Total — Credits: <span class="credit">₹${dailyCredit.toFixed(2)}</span> | 
+            Debits: <span class="debit">₹${dailyDebit.toFixed(2)}</span> | 
+            Net: ₹${(dailyCredit - dailyDebit).toFixed(2)}
+        `;
+        dayDiv.appendChild(dailySummaryDiv);
+
+        transactionsDisplay.appendChild(dayDiv);
+    });
+
+    // Display Overall Summary
+    transactionSummary.innerHTML = `
+        Total Credits: ₹${totalCredit.toFixed(2)} | Total Debits: ₹${totalDebit.toFixed(2)}
+        <br>Net Amount: ₹${(totalCredit - totalDebit).toFixed(2)}
+    `;
+    transactionSummary.style.display = 'block';
+}
 
         // Event listeners
         filterButton.addEventListener('click', fetchTransactions);
