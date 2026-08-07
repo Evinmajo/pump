@@ -766,20 +766,11 @@ app.post('/api/saveReading', async (req, res) => {
                 // If amount is zero or missing, skip updating stock
                 if (!entry.amount || entry.amount <= 0) continue; 
 
-                // Check if the sold item is one of the linked 5kg gas items
-                if (entry.name === '5kg Gas Refill For Rent' || entry.name === '5kg Gas full') {
-                    // Update BOTH items at the same time
-                    await OilStock.updateMany(
-                        { type: { $in: ['5kg Gas Refill For Rent', '5kg Gas full'] } }, 
-                        { $inc: { quantity: -entry.amount } }
-                    );
-                } else {
-                    // Standard single item deduction for normal oil types
-                    await OilStock.findOneAndUpdate(
-                        { type: entry.name }, 
-                        { $inc: { quantity: -entry.amount } }
-                    );
-                }
+                // Standard single item deduction for all item types
+                await OilStock.findOneAndUpdate(
+                    { type: entry.name }, 
+                    { $inc: { quantity: -entry.amount } }
+                );
             }
         }
 
