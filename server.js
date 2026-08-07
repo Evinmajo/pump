@@ -66,6 +66,9 @@ app.get('/excess-shot-report', (req, res) => {
 app.get('/bill', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'bill_generator.html'));
 });
+app.get('/packed-sales-entry', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'packed_sales_entry.html'));
+});
 app.get('/density', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'density.html'));
 });
@@ -930,18 +933,72 @@ app.get('/api/transactions/creditDebit', async (req, res) => {
 app.put('/api/reading/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const updatedReading = await Reading.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+        const newEntries = req.body.packedOilEntries || [];
 
-        if (!updatedReading) {
+        // 1. Fetch existing record to compare previous entries vs new entries
+        const existingReading = await Reading.findById(id);
+        if (!existingReading) {
             return res.status(404).json({ message: 'Reading not found' });
         }
 
+        const oldEntries = existingReading.packedOilEntries || [];
+
+        // Calculate old quantities per item
+        const oldQtyMap = {};
+        oldEntries.forEach(entry => {
+            if (entry.name) {
+                oldQtyMap[entry.name] = (oldQtyMap[entry.name] || 0) + (Number(entry.amount) || 0);
+            }
+        });
+
+        // Calculate new quantities per item
+        const newQtyMap = {};
+        newEntries.forEach(entry => {
+            if (entry.name) {
+                newQtyMap[entry.name] = (newQtyMap[entry.name] || 0) + (Number(entry.amount) || 0);
+            }
+        });
+
+        const allItemNames = new Set([...Object.keys(oldQtyMap), ...Object.keys(newQtyMap)]);
+
+        for (const name of allItemNames) {
+            const previousQty = oldQtyMap[name] || 0;
+            const currentQty = newQtyMap[name] || 0;
+            const delta = currentQty - previousQty; // Net change in sales quantity
+
+            if (delta === 0) continue;
+
+            // --- SPECIAL GAS RULE 1: "5kg Gas Refill For Rent" ---
+            if (name === '5kg Gas Refill For Rent') {
+                // Deduct primary item stock
+                await OilStock.findOneAndUpdate({ type: '5kg Gas Refill For Rent' }, { $inc: { quantity: -delta } });
+                
+                // Also deduct "5kg Gas full"
+                await OilStock.findOneAndUpdate({ type: '5kg Gas full' }, { $inc: { quantity: -delta } });
+                
+                // INCREASE "5kg Gas empty" stock (since empty cylinder is returned/received)
+                await OilStock.findOneAndUpdate({ type: '5kg Gas empty' }, { $inc: { quantity: delta } });
+            } 
+            // --- SPECIAL GAS RULE 2: "5kg Gas full" ---
+            else if (name === '5kg Gas full') {
+                // Deduct primary item stock
+                await OilStock.findOneAndUpdate({ type: '5kg Gas full' }, { $inc: { quantity: -delta } });
+                
+                // Also deduct "5kg Gas Refill For Rent"
+                await OilStock.findOneAndUpdate({ type: '5kg Gas Refill For Rent' }, { $inc: { quantity: -delta } });
+            } 
+            // --- STANDARD DEDUCTION FOR ALL OTHER ITEMS ---
+            else {
+                await OilStock.findOneAndUpdate({ type: name }, { $inc: { quantity: -delta } });
+            }
+        }
+
+        // Save updated reading document
+        const updatedReading = await Reading.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
         res.status(200).json(updatedReading);
+
     } catch (error) {
         console.error('Error updating reading:', error);
-        if (error.code === 11000) {
-            return res.status(409).json({ message: 'A reading with this ID already exists. Please use a different ID for update.', error: error.message });
-        }
         res.status(500).json({ message: 'Error updating reading', error: error.message });
     }
 });
