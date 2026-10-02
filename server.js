@@ -69,6 +69,9 @@ app.get('/bill', (req, res) => {
 app.get('/packed-sales-entry', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'packed_sales_entry.html'));
 });
+app.get('/gross-sold-report', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'gross_sold_report.html'));
+});
 app.get('/density', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'density.html'));
 });
